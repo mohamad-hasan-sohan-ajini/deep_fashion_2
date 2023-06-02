@@ -22,7 +22,7 @@ val_transforms = A.Compose(
         A.Normalize(),
         ToTensorV2(),
     ],
-    keypoint_params=A.KeypointParams(format='xys', remove_invisible=False),
+    keypoint_params=A.KeypointParams(format='xy', remove_invisible=False),
     bbox_params=A.BboxParams(format='pascal_voc', label_fields=['classes']),
 )
 
@@ -48,7 +48,7 @@ train_transforms = A.Compose(
         A.Normalize(),
         ToTensorV2(),
     ],
-    keypoint_params=A.KeypointParams(format='xys', remove_invisible=False),
+    keypoint_params=A.KeypointParams(format='xy', remove_invisible=False),
     bbox_params=A.BboxParams(format='pascal_voc', label_fields=['classes']),
 )
 
@@ -78,16 +78,18 @@ class DeepFashion2Dataset(Dataset):
             {
                 'bbox': v['bounding_box'],
                 'class': v['category_name'],
-                'keypoints': np.array(v['landmarks']).reshape(-1, 3),
+                'keypoints': np.array(v['landmarks']).reshape(-1, 3)[:, :2],
+                'visibility': np.array(v['landmarks']).reshape(-1, 3)[:, 2],
             }
             for k, v in annotation.items()
             if k.startswith('item')
         ]
         # create keypoint, bbox, and classes lists. (pack keypoints)
+        bboxes = [item['bbox'] for item in annotation]
         keypoints = np.concatenate([item['keypoints'] for item in annotation])
         keypoints_border = [item['keypoints'].shape[0] for item in annotation]
-        bboxes = [item['bbox'] for item in annotation]
         classes = [item['class'] for item in annotation]
+        visibility = [item['visibility'] for item in annotation]
         # apply transform
         transformed = self._transforms(
             image=image,
@@ -96,16 +98,23 @@ class DeepFashion2Dataset(Dataset):
             classes=classes,
         )
         # separate transformed results
+        image = transformed['image']
+        bboxes = transformed['bboxes']
+        keypoints = transformed['keypoints']
+        classes = transformed['classes']
         # unpack keypoints
-        return transformed
+        keypoints_border = np.cumsum([0] + keypoints_border)
+        itterator = zip(keypoints_border[:-1], keypoints_border[1:])
+        keypoints = [keypoints[start:end] for start, end in itterator]
+        return image, bboxes, keypoints, classes, visibility
 
 
 if __name__ == '__main__':
     ds = DeepFashion2Dataset(
         '/data/DeepFasion2/validation',
-        # train_transforms,
-        val_transforms,
+        train_transforms,
+        # val_transforms,
     )
-    transformed = ds[0]
+    image, bboxes, keypoints, classes, visibility = ds[0]
     from torchvision.utils import save_image
-    save_image(transformed['image'], '/tmp/tmp.png')
+    save_image(image, '/tmp/tmp.png')
