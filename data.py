@@ -111,7 +111,7 @@ class DeepFashion2Dataset(Dataset):
 
 if __name__ == '__main__':
     ds = DeepFashion2Dataset(
-        '/data/DeepFasion2/validation',
+        '/data/DeepFashion2/validation',
         train_transforms,
         # val_transforms,
     )
