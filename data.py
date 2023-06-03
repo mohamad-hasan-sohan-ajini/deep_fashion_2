@@ -104,14 +104,14 @@ class DeepFashion2Dataset(Dataset):
         classes = transformed['classes']
         # unpack keypoints
         keypoints_border = np.cumsum([0] + keypoints_border)
-        itterator = zip(keypoints_border[:-1], keypoints_border[1:])
-        keypoints = [keypoints[start:end] for start, end in itterator]
+        iterator = zip(keypoints_border[:-1], keypoints_border[1:])
+        keypoints = [keypoints[start:end] for start, end in iterator]
         return image, bboxes, keypoints, classes, visibility
 
 
 if __name__ == '__main__':
     ds = DeepFashion2Dataset(
-        '/data/DeepFashion2/validation',
+        '/home/aj/data/DeepFashion2/validation',
         train_transforms,
         # val_transforms,
     )
