@@ -7,18 +7,19 @@ from pathlib import Path
 import albumentations as A
 import cv2
 import numpy as np
+import torch
 from albumentations.pytorch import ToTensorV2
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 
-IMAGE_SIZE = 256
+from config import DataConfig
 
 val_transforms = A.Compose(
     [
-        A.SmallestMaxSize(max_size=IMAGE_SIZE),
+        A.SmallestMaxSize(max_size=DataConfig.IMAGE_SIZE),
         A.PadIfNeeded(
-            min_height=IMAGE_SIZE,
-            min_width=IMAGE_SIZE,
+            min_height=DataConfig.IMAGE_SIZE,
+            min_width=DataConfig.IMAGE_SIZE,
             border_mode=cv2.BORDER_REPLICATE,
         ),
         A.Normalize(),
@@ -38,12 +39,15 @@ train_transforms = A.Compose(
         A.Rotate(limit=45, border_mode=cv2.BORDER_REPLICATE),
         A.SmallestMaxSize(max_size=320),
         A.RandomScale(scale_limit=.15),
-        A.RandomCrop(height=IMAGE_SIZE, width=IMAGE_SIZE),
+        A.RandomCrop(
+            height=DataConfig.IMAGE_SIZE,
+            width=DataConfig.IMAGE_SIZE,
+        ),
         # pixel level
         A.RandomBrightnessContrast(p=.15),
-        # A.AdvancedBlur(p=.15),
+        A.AdvancedBlur(p=.15),
         A.ChannelShuffle(p=.15),
-        # A.MedianBlur(p=.15),
+        A.MedianBlur(p=.15),
         A.Posterize(p=.15),
         A.Solarize(p=.015),
         # format data
@@ -115,17 +119,44 @@ class DeepFashion2Dataset(Dataset):
         iterator = zip(keypoints_border[:-1], keypoints_border[1:])
         keypoints = [keypoints[start:end] for start, end in iterator]
         # normalize keypoints, bboxes, and visibilities
-        bboxes = np.array(bboxes).clip(0, IMAGE_SIZE) / IMAGE_SIZE
+        classes = torch.LongTensor(classes)
+        bboxes = torch.FloatTensor(bboxes).clip(0, DataConfig.IMAGE_SIZE)
+        bboxes /=  DataConfig.IMAGE_SIZE
         keypoints = [
-            np.array(keypoint).clip(0, IMAGE_SIZE) / IMAGE_SIZE
+            (
+                torch.FloatTensor(keypoint).clip(0, DataConfig.IMAGE_SIZE)
+                / DataConfig.IMAGE_SIZE
+            )
             for keypoint
             in keypoints
         ]
         visibilities = [
-            np.array(visibility).reshape(-1, 1) / 2.
+            torch.FloatTensor(visibility).reshape(-1, 1) / 2.
             for visibility
             in visibilities
         ]
+        from IPython import embed
+        embed()
+        # fix length
+        classes = torch.cat(
+            [
+                classes,
+                torch.zeros(
+                    self._max_objects - classes.size(0),
+                    dtype=torch.int32,
+                ),
+            ],
+        )
+        bboxes = torch.cat(
+            [
+                bboxes,
+                torch.zeros(
+                    (self._max_objects - bboxes.size(0), 4),
+                    dtype=torch.float32,
+                ),
+            ],
+        )
+        keypoints = self.pad_keypoints(keypoints, classes)
         return image, classes, bboxes, keypoints, visibilities
 
 
