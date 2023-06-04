@@ -11,12 +11,14 @@ from albumentations.pytorch import ToTensorV2
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 
+IMAGE_SIZE = 256
+
 val_transforms = A.Compose(
     [
-        A.SmallestMaxSize(max_size=256),
+        A.SmallestMaxSize(max_size=IMAGE_SIZE),
         A.PadIfNeeded(
-            min_height=256,
-            min_width=256,
+            min_height=IMAGE_SIZE,
+            min_width=IMAGE_SIZE,
             border_mode=cv2.BORDER_REPLICATE,
         ),
         A.Normalize(),
@@ -36,7 +38,7 @@ train_transforms = A.Compose(
         A.Rotate(limit=45, border_mode=cv2.BORDER_REPLICATE),
         A.SmallestMaxSize(max_size=320),
         A.RandomScale(scale_limit=.15),
-        A.RandomCrop(height=256, width=256),
+        A.RandomCrop(height=IMAGE_SIZE, width=IMAGE_SIZE),
         # pixel level
         A.RandomBrightnessContrast(p=.15),
         # A.AdvancedBlur(p=.15),
@@ -54,12 +56,18 @@ train_transforms = A.Compose(
 
 
 class DeepFashion2Dataset(Dataset):
-    def __init__(self, base_path: str, transforms: A.Compose) -> None:
+    def __init__(
+            self,
+            base_path: str,
+            transforms: A.Compose,
+            max_objects: int,
+    ) -> None:
         super().__init__()
         base_path = Path(base_path)
         self._base_path = Path(base_path)
         self._length = len(glob(str(self._base_path / 'image/*.jpg')))
         self._transforms = transforms
+        self._max_objects = max_objects
 
     def __len__(self) -> int:
         return self._length
@@ -77,9 +85,9 @@ class DeepFashion2Dataset(Dataset):
         annotation = [
             {
                 'bbox': v['bounding_box'],
-                'class': v['category_name'],
+                'class': v['category_id'],
                 'keypoints': np.array(v['landmarks']).reshape(-1, 3)[:, :2],
-                'visibility': np.array(v['landmarks']).reshape(-1, 3)[:, 2],
+                'visibilities': np.array(v['landmarks']).reshape(-1, 3)[:, 2],
             }
             for k, v in annotation.items()
             if k.startswith('item')
@@ -89,7 +97,7 @@ class DeepFashion2Dataset(Dataset):
         keypoints = np.concatenate([item['keypoints'] for item in annotation])
         keypoints_border = [item['keypoints'].shape[0] for item in annotation]
         classes = [item['class'] for item in annotation]
-        visibility = [item['visibility'] for item in annotation]
+        visibilities = [item['visibilities'] for item in annotation]
         # apply transform
         transformed = self._transforms(
             image=image,
@@ -106,15 +114,28 @@ class DeepFashion2Dataset(Dataset):
         keypoints_border = np.cumsum([0] + keypoints_border)
         iterator = zip(keypoints_border[:-1], keypoints_border[1:])
         keypoints = [keypoints[start:end] for start, end in iterator]
-        return image, bboxes, keypoints, classes, visibility
+        # normalize keypoints, bboxes, and visibilities
+        bboxes = np.array(bboxes).clip(0, IMAGE_SIZE) / IMAGE_SIZE
+        keypoints = [
+            np.array(keypoint).clip(0, IMAGE_SIZE) / IMAGE_SIZE
+            for keypoint
+            in keypoints
+        ]
+        visibilities = [
+            np.array(visibility).reshape(-1, 1) / 2.
+            for visibility
+            in visibilities
+        ]
+        return image, classes, bboxes, keypoints, visibilities
 
 
 if __name__ == '__main__':
     ds = DeepFashion2Dataset(
-        '/home/aj/data/DeepFashion2/validation',
-        train_transforms,
-        # val_transforms,
+        base_path='/home/aj/data/DeepFashion2/validation',
+        transforms=train_transforms,
+        # transforms=val_transforms,
+        max_objects=10,
     )
-    image, bboxes, keypoints, classes, visibility = ds[0]
+    image, classes, bboxes, keypoints, visibilities = ds[0]
     from torchvision.utils import save_image
     save_image(image, '/tmp/tmp.png')
