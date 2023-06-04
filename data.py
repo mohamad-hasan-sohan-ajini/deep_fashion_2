@@ -39,9 +39,9 @@ train_transforms = A.Compose(
         A.RandomCrop(height=256, width=256),
         # pixel level
         A.RandomBrightnessContrast(p=.15),
-        A.AdvancedBlur(p=.15),
+        # A.AdvancedBlur(p=.15),
         A.ChannelShuffle(p=.15),
-        A.MedianBlur(p=.15),
+        # A.MedianBlur(p=.15),
         A.Posterize(p=.15),
         A.Solarize(p=.015),
         # format data
