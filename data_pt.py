@@ -1,4 +1,4 @@
-"""Dataset, DataLoader, and pytorch lightning DataModule"""
+"""Pytorch dataset module"""
 
 import json
 from glob import glob
