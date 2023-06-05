@@ -129,9 +129,9 @@ class DeepFashion2Dataset(Dataset):
         return result
 
     def _pad_visibilities(
-        self,
-        visibilities: list[np.ndarray],
-        classes: Tensor,
+            self,
+            visibilities: list[np.ndarray],
+            classes: Tensor,
     ) -> Tensor:
         visibilities = [
             torch.FloatTensor(visibility).reshape(-1, 1) / 2.
