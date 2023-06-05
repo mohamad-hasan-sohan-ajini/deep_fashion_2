@@ -12,7 +12,7 @@ from albumentations.pytorch import ToTensorV2
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 
-from config import DataConfig
+from config import DataConfig, keypoint_indices
 
 val_transforms = A.Compose(
     [
@@ -76,6 +76,80 @@ class DeepFashion2Dataset(Dataset):
     def __len__(self) -> int:
         return self._length
 
+    def _pad_classes(self, classes: list[int]) -> Tensor:
+        classes = torch.LongTensor(classes)
+        classes = torch.cat(
+            [
+                classes,
+                torch.zeros(
+                    self._max_objects - classes.size(0),
+                    dtype=torch.int32,
+                ),
+            ],
+        )
+        return classes
+
+    def _pad_bboxes(self, bboxes: list[tuple[float]]) -> Tensor:
+        bboxes = torch.FloatTensor(bboxes).clip(0, DataConfig.IMAGE_SIZE)
+        bboxes /=  DataConfig.IMAGE_SIZE
+        bboxes = torch.cat(
+            [
+                bboxes,
+                torch.zeros(
+                    (self._max_objects - bboxes.size(0), 4),
+                    dtype=torch.float32,
+                ),
+            ],
+        )
+        return bboxes
+
+    def _pad_keypoints(
+            self,
+            keypoints: list[list[tuple[float]]],
+            classes: Tensor,
+    ) -> Tensor:
+        keypoints = [
+            (
+                torch.FloatTensor(keypoint).clip(0, DataConfig.IMAGE_SIZE)
+                / DataConfig.IMAGE_SIZE
+            )
+            for keypoint
+            in keypoints
+        ]
+        result = torch.zeros(
+            (self._max_objects, DataConfig.NUM_KEYPOINTS, 2),
+            dtype=torch.float32,
+        )
+        for i, (class_, keypoint) in enumerate(zip(classes, keypoints)):
+            class_ = class_.item()
+            if class_ == 0:
+                break
+            start, end = keypoint_indices[class_]
+            result[i, start:end] = keypoint
+        return result
+
+    def _pad_visibilities(
+        self,
+        visibilities: list[np.ndarray],
+        classes: Tensor,
+    ) -> Tensor:
+        visibilities = [
+            torch.FloatTensor(visibility).reshape(-1, 1) / 2.
+            for visibility
+            in visibilities
+        ]
+        result = torch.zeros(
+            (self._max_objects, DataConfig.NUM_KEYPOINTS, 1),
+            dtype=torch.float32,
+        )
+        for i, (class_, visibility) in enumerate(zip(classes, visibilities)):
+            class_ = class_.item()
+            if class_ == 0:
+                break
+            start, end = keypoint_indices[class_]
+            result[i, start:end] = visibility
+        return result
+
     def __getitem__(self, index: int) -> tuple[Tensor]:
         # create paths
         image_path = self._base_path / f'image/{index + 1:06d}.jpg'
@@ -118,45 +192,12 @@ class DeepFashion2Dataset(Dataset):
         keypoints_border = np.cumsum([0] + keypoints_border)
         iterator = zip(keypoints_border[:-1], keypoints_border[1:])
         keypoints = [keypoints[start:end] for start, end in iterator]
-        # normalize keypoints, bboxes, and visibilities
-        classes = torch.LongTensor(classes)
-        bboxes = torch.FloatTensor(bboxes).clip(0, DataConfig.IMAGE_SIZE)
-        bboxes /=  DataConfig.IMAGE_SIZE
-        keypoints = [
-            (
-                torch.FloatTensor(keypoint).clip(0, DataConfig.IMAGE_SIZE)
-                / DataConfig.IMAGE_SIZE
-            )
-            for keypoint
-            in keypoints
-        ]
-        visibilities = [
-            torch.FloatTensor(visibility).reshape(-1, 1) / 2.
-            for visibility
-            in visibilities
-        ]
-        from IPython import embed
-        embed()
-        # fix length
-        classes = torch.cat(
-            [
-                classes,
-                torch.zeros(
-                    self._max_objects - classes.size(0),
-                    dtype=torch.int32,
-                ),
-            ],
-        )
-        bboxes = torch.cat(
-            [
-                bboxes,
-                torch.zeros(
-                    (self._max_objects - bboxes.size(0), 4),
-                    dtype=torch.float32,
-                ),
-            ],
-        )
-        keypoints = self.pad_keypoints(keypoints, classes)
+        # normalize and fix length of classes, bboxes, keypoints,
+        # and visibilities
+        classes = self._pad_classes(classes)
+        bboxes = self._pad_bboxes(bboxes)
+        keypoints = self._pad_keypoints(keypoints, classes)
+        visibilities = self._pad_visibilities(visibilities, classes)
         return image, classes, bboxes, keypoints, visibilities
 
 
