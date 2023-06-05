@@ -36,9 +36,9 @@ train_transforms = A.Compose(
         A.VerticalFlip(),
         A.Affine(mode=cv2.BORDER_REPLICATE),
         A.Perspective(pad_mode=cv2.BORDER_REPLICATE),
-        A.Rotate(limit=45, border_mode=cv2.BORDER_REPLICATE),
+        A.Rotate(limit=30, border_mode=cv2.BORDER_REPLICATE),
         A.SmallestMaxSize(max_size=320),
-        A.RandomScale(scale_limit=.15),
+        A.RandomScale(scale_limit=.1),
         A.RandomCrop(
             height=DataConfig.IMAGE_SIZE,
             width=DataConfig.IMAGE_SIZE,
@@ -150,7 +150,7 @@ class DeepFashion2Dataset(Dataset):
             result[i, start:end] = visibility
         return result
 
-    def __getitem__(self, index: int) -> tuple[Tensor]:
+    def _getitem(self, index: int) -> tuple[Tensor]:
         # create paths
         image_path = self._base_path / f'image/{index + 1:06d}.jpg'
         annotation_path = self._base_path / f'annos/{index + 1:06d}.json'
@@ -199,6 +199,12 @@ class DeepFashion2Dataset(Dataset):
         keypoints = self._pad_keypoints(keypoints, classes)
         visibilities = self._pad_visibilities(visibilities, classes)
         return image, classes, bboxes, keypoints, visibilities
+
+    def __getitem__(self, index: int) -> tuple[Tensor]:
+        try:
+            return self._getitem(index)
+        except Exception:
+            return self[(index + 1) % len(self)]
 
 
 if __name__ == '__main__':
