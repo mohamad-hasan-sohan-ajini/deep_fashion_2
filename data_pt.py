@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from albumentations.pytorch import ToTensorV2
 from torch import Tensor
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 
 from config import DataConfig, keypoint_indices
 
