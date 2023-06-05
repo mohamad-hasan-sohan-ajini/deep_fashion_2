@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-landmark_indices = {
+keypoint_indices = {
     1: (0, 25),
     2: (25, 58),
     3: (58, 89),
@@ -22,3 +22,4 @@ landmark_indices = {
 @dataclass
 class DataConfig:
     IMAGE_SIZE: int = 256
+    NUM_KEYPOINTS: int = 294
