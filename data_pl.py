@@ -16,7 +16,7 @@ class DeepFashion2DataModule(LightningDataModule):
             val_base_path: str,
             max_objects: int = 10,
             batch_size: int = 64,
-            num_workers: int = 4,
+            num_workers: int = 8,
     ) -> None:
         super().__init__()
         self.train_base_path = train_base_path
@@ -65,5 +65,7 @@ if __name__ == '__main__':
     dm.setup()
     train_dl = dm.train_dataloader()
     val_dl = dm.val_dataloader()
-    for image, classes, bboxes, keypoints, visibilities in train_dl:
+    from tqdm import tqdm
+    for image, classes, bboxes, keypoints, visibilities in tqdm(train_dl):
+        print(classes)
         break
