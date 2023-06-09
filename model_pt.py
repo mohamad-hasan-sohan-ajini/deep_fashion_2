@@ -6,7 +6,7 @@ import torch
 from torch import Tensor, nn
 
 
-class PositionalEncoding2D(nn.Module):
+class FixedPositionalEncoding2D(nn.Module):
     """Sinusoidal 2D Positional Encoding"""
 
     def __init__(
@@ -69,3 +69,49 @@ class PositionalEncoding2D(nn.Module):
         :rtype: torch.Tensor
         """
         return x + self.pe
+
+
+class LearnablePositionalEncoding2D(nn.Module):
+    """Sinusoidal 2D Positional Encoding"""
+
+    def __init__(
+            self,
+            d_model: int,
+            height: int,
+            width: int,
+    ):
+        """Initialize
+
+        :param d_model: Model hidden size
+        :type d_model: int
+        :param max_len: maximum length of input signal
+        :type max_len: int
+        """
+        super().__init__()
+        self.register_parameter(
+            'pe',
+            nn.Parameter(
+                FixedPositionalEncoding2D(d_model, height, width).pe.clone()
+            )
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Add positional encoding to the signal
+
+        :param x: input of shape [batch_size, channels, height, width]
+        :type x: torch.Tensor
+        :returns: Positional encoded added signal
+        :rtype: torch.Tensor
+        """
+        return x + self.pe
+
+
+if __name__ == '__main__':
+    d_model = 128
+    height, width = 32, 32
+    fix_pe2d = FixedPositionalEncoding2D(d_model, height, width)
+    learnable_pe2d = LearnablePositionalEncoding2D(d_model, height, width)
+
+    x = torch.randn(16, d_model, 32, 32)
+    yf = fix_pe2d(x)
+    yl = learnable_pe2d(x)
