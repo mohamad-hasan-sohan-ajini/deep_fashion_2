@@ -3,8 +3,31 @@
 from typing import Callable
 
 import numpy as np
+import torch
 from scipy.optimize import linear_sum_assignment
 from torch import Tensor
+from torch.nn import functional as F
+
+
+def hard_classification_cost_function(
+        pred_logits: Tensor,
+        target_classes: Tensor,
+) -> Tensor:
+    pred_classes = pred_logits.argmax(-1).float().unsqueeze(-1)
+    target_classes = target_classes.float().unsqueeze(-1)
+    cost = (torch.cdist(pred_classes, target_classes) != 0).float()
+    return cost
+
+
+def soft_classification_cost_function(
+        pred_logits: Tensor,
+        target_classes: Tensor,
+        num_classes: int,
+) -> Tensor:
+    pred_classes = pred_logits.softmax(-1)
+    target_classes = F.one_hot(target_classes, num_classes).float()
+    cost = torch.cdist(pred_classes, target_classes)
+    return cost
 
 
 class Matcher:
@@ -48,7 +71,7 @@ class Matcher:
 
     def __call__(
             self,
-            pred_classes: Tensor,
+            pred_logits: Tensor,
             target_classes: Tensor,
             pred_bboxes: Tensor,
             target_bboxes: Tensor,
@@ -70,3 +93,28 @@ if __name__ == '__main__':
     )
     cost_mat = np.random.randn(1024, 1024)
     x_indices, y_indices = linear_sum_assignment(cost_mat)
+
+    # test class cost functions
+    target_classes = torch.tensor(
+        [
+            [3, 1, 0, 0],
+            [5, 0, 0, 0],
+        ],
+        dtype=torch.int64,
+    )
+    print(target_classes)
+    pred_logits = torch.randn(2, 4, 6)
+    print(pred_logits.softmax(-1))
+    print(pred_logits.argmax(-1))
+    # call functions
+    hard_cost = hard_classification_cost_function(
+        pred_logits.clone(),
+        target_classes.clone(),
+    )
+    print(f'{hard_cost = }')
+    soft_cost = soft_classification_cost_function(
+        pred_logits.clone(),
+        target_classes.clone(),
+        num_classes=6,
+    )
+    print(f'{soft_cost = }')
