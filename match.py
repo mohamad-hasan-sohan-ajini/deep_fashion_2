@@ -20,10 +20,10 @@ class Matcher:
         """Initialize
 
         :param classification_cost_function: A python callable that
-            takes model class predictions and ground truth classes of
-            shapes (N, T) and (N, T, C) respectively and returns a
-            (N, T, T) Tensor that contains class matching costs, where
-            T is maximum number of objects in dataset images.
+            takes model class logits and ground truth classes of shapes
+            (N, T) and (N, T, C) respectively and returns a (N, T, T)
+            Tensor that contains class matching costs, where T is
+            maximum number of objects in dataset images.
         :param classification_weight: Weight of classification errors.
         :param bbox_cost_function: A python callable that takes model
             bbox predictions and ground truth bboxes, both having shape
