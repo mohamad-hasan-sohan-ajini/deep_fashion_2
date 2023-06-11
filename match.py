@@ -30,6 +30,25 @@ def soft_classification_cost_function(
     return cost
 
 
+def bbox_cost_function(pred_bboxes: Tensor, target_bboxes: Tensor) -> Tensor:
+    cost = torch.cdist(pred_bboxes, target_bboxes)
+    return cost
+
+
+def keypoint_cost_function(
+        pred_keypoints: Tensor,
+        target_keypoints: Tensor,
+        visibilities: Tensor,
+) -> Tensor:
+    batch_size, num_objects, *_ = pred_keypoints.size()
+    pred_keypoints = (pred_keypoints * visibilities)
+    pred_keypoints = pred_keypoints.view(batch_size, num_objects, -1)
+    target_keypoints = target_keypoints * visibilities
+    target_keypoints = target_keypoints.view(batch_size, num_objects, -1)
+    cost = torch.cdist(pred_keypoints, target_keypoints)
+    return cost
+
+
 class Matcher:
     def __init__(
             self,
@@ -118,3 +137,7 @@ if __name__ == '__main__':
         num_classes=6,
     )
     print(f'{soft_cost = }')
+
+    # test bbox cost function
+
+    # test keypoints cost function
