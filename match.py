@@ -185,3 +185,23 @@ if __name__ == '__main__':
         visibilities,
     )
     print(f'{keypoints_cost.shape = }')
+
+    # matcher test
+    matcher = Matcher(
+        soft_classification_cost_function,
+        1,
+        bbox_cost_function,
+        5,
+        keypoint_cost_function,
+        .2,
+        6,
+    )
+    pred_indices, target_indices = matcher(
+        pred_logits,
+        target_classes,
+        pred_bboxes,
+        target_bboxes,
+        pred_keypoints,
+        target_keypoints,
+        visibilities,
+    )
