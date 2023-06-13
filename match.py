@@ -12,6 +12,7 @@ from torch.nn import functional as F
 def hard_classification_cost_function(
         pred_logits: Tensor,
         target_classes: Tensor,
+        _: int,
 ) -> Tensor:
     pred_classes = pred_logits.argmax(-1).float().unsqueeze(-1)
     target_classes = target_classes.float().unsqueeze(-1)
