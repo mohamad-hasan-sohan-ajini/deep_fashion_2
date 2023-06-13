@@ -139,5 +139,18 @@ if __name__ == '__main__':
     print(f'{soft_cost = }')
 
     # test bbox cost function
+    target_bboxes = torch.randn(2, 4, 4)
+    pred_bboxes = torch.randn(2, 4, 4)
+    bbox_cost = bbox_cost_function(pred_bboxes, target_bboxes)
+    print(f'{bbox_cost.shape = }')
 
     # test keypoints cost function
+    target_keypoints = torch.randn(2, 4, 294, 2)
+    pred_keypoints = torch.randn(2, 4, 294, 2)
+    visibilities = torch.randn(2, 4, 294, 1)
+    keypoints_cost = keypoint_cost_function(
+        pred_keypoints,
+        target_keypoints,
+        visibilities,
+    )
+    print(f'{keypoints_cost.shape = }')
