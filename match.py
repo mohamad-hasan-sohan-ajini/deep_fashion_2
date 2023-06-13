@@ -59,6 +59,7 @@ class Matcher:
             bbox_weight: float,
             keypoint_cost_function: Callable[[Tensor, Tensor], Tensor],
             keypoint_weight: float,
+            num_classes: int,
     ) -> None:
         """Initialize
 
@@ -88,6 +89,7 @@ class Matcher:
         self.bbox_weight = bbox_weight
         self.keypoint_cost_function = keypoint_cost_function
         self.keypoint_weight = keypoint_weight
+        self.num_classes = num_classes
 
     def __call__(
             self,
@@ -105,6 +107,7 @@ class Matcher:
                 * self.classification_cost_function(
                     pred_logits,
                     target_classes,
+                    self.num_classes,
                 )
             )
             + (
@@ -156,12 +159,13 @@ if __name__ == '__main__':
     hard_cost = hard_classification_cost_function(
         pred_logits.clone(),
         target_classes.clone(),
+        0,
     )
     print(f'{hard_cost = }')
     soft_cost = soft_classification_cost_function(
         pred_logits.clone(),
         target_classes.clone(),
-        num_classes=6,
+        6,
     )
     print(f'{soft_cost = }')
 
