@@ -123,12 +123,11 @@ class Matcher:
                 )
             )
         )
-        pred_indices, target_indices = [], []
+        target_indices = [], []
         for cost in costs:
-            pred_index, target_index = linear_sum_assignment(cost)
-            pred_indices.append(pred_index)
+            _, target_index = linear_sum_assignment(cost)
             target_indices.append(target_index)
-        return pred_indices, target_indices
+        return np.stack(target_indices)
 
 
 if __name__ == '__main__':
@@ -196,7 +195,7 @@ if __name__ == '__main__':
         .2,
         6,
     )
-    pred_indices, target_indices = matcher(
+    target_indices = matcher(
         pred_logits,
         target_classes,
         pred_bboxes,
