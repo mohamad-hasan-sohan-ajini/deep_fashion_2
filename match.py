@@ -98,7 +98,33 @@ class Matcher:
             target_keypoints: Tensor,
             visibilities: Tensor,
     ) -> list:
-        pass
+        costs = (
+            (
+                self.classification_weight
+                * self.classification_cost_function(
+                    pred_logits,
+                    target_classes,
+                )
+            )
+            + (
+                self.bbox_weight
+                * self.bbox_cost_function(pred_bboxes, target_bboxes)
+            )
+            + (
+                self.keypoint_weight
+                * self.keypoint_cost_function(
+                    pred_keypoints,
+                    target_keypoints,
+                    visibilities,
+                )
+            )
+        )
+        pred_indices, target_indices = [], []
+        for cost in costs:
+            pred_index, target_index = linear_sum_assignment(cost)
+            pred_indices.append(pred_index)
+            target_indices.append(target_index)
+        return pred_indices, target_indices
 
 
 if __name__ == '__main__':
