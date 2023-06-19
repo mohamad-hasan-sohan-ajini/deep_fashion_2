@@ -123,7 +123,7 @@ class Matcher:
                 )
             )
         )
-        target_indices = [], []
+        target_indices = []
         for cost in costs:
             _, target_index = linear_sum_assignment(cost)
             target_indices.append(target_index)
@@ -131,6 +131,8 @@ class Matcher:
 
 
 if __name__ == '__main__':
+    torch.manual_seed(18)
+
     cost_mat = np.array(
         [
             [10, 12, 19, 11],
@@ -150,10 +152,10 @@ if __name__ == '__main__':
         ],
         dtype=torch.int64,
     )
-    print(target_classes)
+    print(f'{target_classes = }')
     pred_logits = torch.randn(2, 4, 6)
-    print(pred_logits.softmax(-1))
-    print(pred_logits.argmax(-1))
+    print(f'{pred_logits.softmax(-1) = }')
+    print(f'{pred_logits.argmax(-1) = }')
     # call functions
     hard_cost = hard_classification_cost_function(
         pred_logits.clone(),
@@ -190,9 +192,9 @@ if __name__ == '__main__':
         soft_classification_cost_function,
         1,
         bbox_cost_function,
-        5,
+        0,
         keypoint_cost_function,
-        .2,
+        0,
         6,
     )
     target_indices = matcher(
@@ -204,3 +206,14 @@ if __name__ == '__main__':
         target_keypoints,
         visibilities,
     )
+    print(f'{target_indices = }')
+
+    # compute loss: in case 2 minimum loss is computed
+    flatten_indices = (target_indices + np.array([[0], [4]])).reshape(-1)
+    criterion = torch.nn.CrossEntropyLoss()
+    loss0 = criterion(pred_logits.view(-1, 6), target_classes.reshape(-1)).item()
+    print(f'{loss0 = }')
+    loss1 = criterion(pred_logits.view(-1, 6)[flatten_indices], target_classes.reshape(-1)).item()
+    print(f'{loss1 = }')
+    loss2 = criterion(pred_logits.view(-1, 6), target_classes.reshape(-1)[flatten_indices]).item()
+    print(f'{loss2 = }')
