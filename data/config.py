@@ -1,4 +1,4 @@
-"""Gather all configuration regarding data, model, and training"""
+"""Data configuration"""
 
 from dataclasses import dataclass
 
