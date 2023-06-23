@@ -1,4 +1,4 @@
-"""Utilites"""
+"""Utilities"""
 
 import torch
 from torch import nn
