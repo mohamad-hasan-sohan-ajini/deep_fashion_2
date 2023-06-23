@@ -53,3 +53,7 @@ class TransformerModel(nn.Module):
             ModelConfig.width,
         )
         # object queries
+        self.object_queries = ObjectQueries(
+            ModelConfig.d_model,
+            ModelConfig.max_objects,
+        )
