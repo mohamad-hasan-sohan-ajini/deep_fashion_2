@@ -1,6 +1,6 @@
 """Transformer model implementation"""
 
-from typing import Callable, Optional
+from typing import Callable
 
 import torch
 from torch import Tensor, nn
@@ -24,6 +24,16 @@ class TransformerModel(nn.Module):
         # Feature extraction
         self.feature_extractor = backbone_builder(num_layers)
         # Transformer encoder
+        encoder_layer = nn.TransformerEncoderLayer(
+            ModelConfig.d_model,
+            ModelConfig.nhead,
+            dropout=ModelConfig.dropout,
+            batch_first=True,
+        )
+        self.encoder = nn.TransformerEncoder(
+            encoder_layer,
+            ModelConfig.num_layers,
+        )
         # Transformer decoder
         # Positional encoder
         # object queries
