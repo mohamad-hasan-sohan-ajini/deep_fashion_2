@@ -35,5 +35,15 @@ class TransformerModel(nn.Module):
             ModelConfig.num_layers,
         )
         # Transformer decoder
+        decoder_layer = nn.TransformerDecoderLayer(
+            ModelConfig.d_model,
+            ModelConfig.nhead,
+            dropout=ModelConfig.dropout,
+            batch_first=True,
+        )
+        self.decoder_layer = nn.TransformerDecoder(
+            decoder_layer,
+            ModelConfig.num_layers,
+        )
         # Positional encoder
         # object queries
