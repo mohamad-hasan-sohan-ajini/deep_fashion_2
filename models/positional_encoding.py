@@ -14,7 +14,7 @@ class FixedPositionalEncoding2D(nn.Module):
             d_model: int,
             height: int,
             width: int,
-    ):
+    ) -> None:
         """Initialize
 
         :param d_model: Model hidden size
@@ -79,7 +79,7 @@ class LearnablePositionalEncoding2D(nn.Module):
             d_model: int,
             height: int,
             width: int,
-    ):
+    ) -> None:
         """Initialize
 
         :param d_model: Model hidden size
