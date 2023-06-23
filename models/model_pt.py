@@ -19,6 +19,7 @@ class TransformerModel(nn.Module):
             self,
             backbone_builder: Callable = get_vgg19_backbone,
             num_layers: int = 18,
+            positional_encoding_builder: Callable = FixedPositionalEncoding2D,
     ) -> None:
         super().__init__()
         # Feature extraction
@@ -46,4 +47,9 @@ class TransformerModel(nn.Module):
             ModelConfig.num_layers,
         )
         # Positional encoder
+        self.positional_encoder = positional_encoding_builder(
+            ModelConfig.d_model,
+            ModelConfig.height,
+            ModelConfig.width,
+        )
         # object queries
