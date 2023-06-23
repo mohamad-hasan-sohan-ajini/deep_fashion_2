@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 @dataclass
 class ModelConfig:
-    embed_dim: int = 1024
-    num_heads: int = 16
+    d_model: int = 1024
+    nhead: int = 16
     dropout: float = .1
+    num_layers: int = 6
