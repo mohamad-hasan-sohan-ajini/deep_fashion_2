@@ -5,8 +5,8 @@ from dataclasses import dataclass
 
 @dataclass
 class ModelConfig:
-    d_model: int = 1024
-    nhead: int = 16
+    d_model: int = 512
+    nhead: int = 8
     dropout: float = .1
     num_layers: int = 6
     height: int = 32
