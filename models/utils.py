@@ -4,10 +4,11 @@ import torch
 from torch import nn
 
 
-def get_vgg19_backbone(_: int) -> nn.Module:
+def get_vgg_backbone(num_layers: int) -> nn.Module:
+    # valid num_layers: {11, 13, 16, 19}
     vgg_model = torch.hub.load(
         'pytorch/vision:v0.10.0',
-        'vgg19',
+        f'vgg{num_layers}_bn',
         pretrained=True,
     )
     return vgg_model.features

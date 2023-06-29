@@ -11,19 +11,19 @@ from positional_encoding import (
     FixedPositionalEncoding2D,
     LearnablePositionalEncoding2D,
 )
-from utils import get_vgg19_backbone, get_resnet_backbone
+from utils import get_vgg_backbone, get_resnet_backbone
 
 
 class TransformerModel(nn.Module):
     def __init__(
             self,
-            backbone_builder: Callable = get_vgg19_backbone,
-            num_layers: int = 18,
+            backbone_builder: Callable = get_resnet_backbone,
+            feature_num_layers: int = 18,
             positional_encoding_builder: Callable = FixedPositionalEncoding2D,
     ) -> None:
         super().__init__()
         # Feature extraction
-        self.feature_extractor = backbone_builder(num_layers)
+        self.feature_extractor = backbone_builder(feature_num_layers)
         # Transformer encoder
         encoder_layer = nn.TransformerEncoderLayer(
             ModelConfig.d_model,
