@@ -9,6 +9,8 @@ class ModelConfig:
     nhead: int = 8
     dropout: float = .1
     num_layers: int = 6
-    height: int = 32
-    width: int = 32
+    height: int = 8
+    width: int = 8
     max_objects: int = 10
+    num_classes: int = 13 + 1
+    num_keypoints: int = 294
