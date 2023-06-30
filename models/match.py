@@ -91,6 +91,7 @@ class Matcher:
         self.keypoint_weight = keypoint_weight
         self.num_classes = num_classes
 
+    @torch.inference_mode()
     def __call__(
             self,
             pred_logits: Tensor,
