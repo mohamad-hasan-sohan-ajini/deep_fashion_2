@@ -127,7 +127,7 @@ class Matcher:
         target_indices = []
         max_objects = pred_logits.size(1)
         for i, cost in enumerate(costs):
-            _, target_index = linear_sum_assignment(cost)
+            _, target_index = linear_sum_assignment(cost.cpu().numpy())
             target_indices.extend(target_index + i * max_objects)
         return np.stack(target_indices)
 
