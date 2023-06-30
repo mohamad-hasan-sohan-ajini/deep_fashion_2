@@ -6,6 +6,7 @@ from typing import Any, Callable
 from pytorch_lightning import LightningModule
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import Tensor, nn, ones, optim
+from torchmetrics import Accuracy
 from torchvision.ops import generalized_box_iou_loss
 
 from models.config import ModelConfig
@@ -50,7 +51,7 @@ class TransformerModelPL(LightningModule):
         class_weights[0] = ModelConfig.class0_weight
         self.class_criterion = nn.CrossEntropyLoss(weight=class_weights)
         self.point_criterion = nn.SmoothL1Loss(reduction='none')
-        self.accuracy = accuracy = Accuracy(
+        self.accuracy = Accuracy(
             task="multiclass",
             num_classes=ModelConfig.num_classes,
         )
