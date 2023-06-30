@@ -16,7 +16,7 @@ from data.config import DataConfig, keypoint_indices
 
 val_transforms = A.Compose(
     [
-        A.SmallestMaxSize(max_size=DataConfig.IMAGE_SIZE),
+        A.LongestMaxSize(max_size=DataConfig.IMAGE_SIZE),
         A.PadIfNeeded(
             min_height=DataConfig.IMAGE_SIZE,
             min_width=DataConfig.IMAGE_SIZE,
