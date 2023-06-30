@@ -124,9 +124,10 @@ class Matcher:
             )
         )
         target_indices = []
-        for cost in costs:
+        max_objects = pred_logits.size(1)
+        for i, cost in enumerate(costs):
             _, target_index = linear_sum_assignment(cost)
-            target_indices.append(target_index)
+            target_indices.extend(target_index + i * max_objects)
         return np.stack(target_indices)
 
 
@@ -197,7 +198,7 @@ if __name__ == '__main__':
         0,
         6,
     )
-    target_indices = matcher(
+    flatten_indices = matcher(
         pred_logits,
         target_classes,
         pred_bboxes,
@@ -206,10 +207,10 @@ if __name__ == '__main__':
         target_keypoints,
         visibilities,
     )
-    print(f'{target_indices = }')
+    print(f'{flatten_indices = }')
 
     # compute loss: in case 2 minimum loss is computed
-    flatten_indices = (target_indices + np.array([[0], [4]])).reshape(-1)
+    # flatten_indices = (target_indices + np.array([[0], [4]])).reshape(-1)
     criterion = torch.nn.CrossEntropyLoss()
     loss0 = criterion(pred_logits.view(-1, 6), target_classes.reshape(-1)).item()
     print(f'{loss0 = }')
