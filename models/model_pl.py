@@ -64,7 +64,6 @@ class TransformerModelPL(LightningModule):
             [
                 {
                     'params': chain(
-                        self.model.feature_extractor.parameters(),
                         self.model.positional_encoder.parameters(),
                         self.model.object_queries.parameters(),
                         self.model.class_ffn.parameters(),
@@ -75,6 +74,7 @@ class TransformerModelPL(LightningModule):
                 },
                 {
                     'params': chain(
+                        self.model.feature_extractor.parameters(),
                         self.model.encoder.parameters(),
                         self.model.decoder.parameters(),
                     ),
