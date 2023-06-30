@@ -169,7 +169,7 @@ class TransformerModelPL(LightningModule):
         other_class_indices = (gt_classes > 0).float().nonzero().view(-1)
         # compute metrics
         class_accuracy_w0 = self.accuracy(pred_classes.argmax(dim=1), gt_classes)
-        class_accuracy_wo0 = self.accuracy(pred_classes[other_class_indices].argmax(dim=1), gt_classes[class0_indices])
+        class_accuracy_wo0 = self.accuracy(pred_classes[other_class_indices].argmax(dim=1), gt_classes[other_class_indices])
         bbox_giou_w0 = generalized_box_iou_loss(pred_bboxes, gt_bboxes, reduction='none')
         bbox_giou_wo0 = generalized_box_iou_loss(pred_bboxes[other_class_indices], gt_bboxes[other_class_indices], reduction='none')
         bbox_iou_w0 = self.point_criterion(pred_bboxes, gt_bboxes).sum(dim=1)
