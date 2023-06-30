@@ -6,7 +6,6 @@ import torch
 from torch import Tensor, nn
 
 from config import ModelConfig
-from match import Matcher
 from object_queries import ObjectQueries
 from positional_encoding import (
     PositionalEncoding2D,
@@ -68,8 +67,6 @@ class TransformerModel(nn.Module):
             ModelConfig.d_model,
             ModelConfig.num_keypoints,
         )
-        # other attributes
-        # self.matcher = Matcher()
 
     def forward(self, images: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         # extract features
@@ -86,10 +83,10 @@ class TransformerModel(nn.Module):
         # transformer decoder
         x = self.decoder(targets, memory)
         # run heads
-        classes = self.class_ffn(x)
-        bboxes = self.bbox_ffn(x)
-        keypoints = self.keypoints_ffn(x)
-        return classes, bboxes, keypoints
+        predicted_classes = self.class_ffn(x)
+        predicted_bboxes = self.bbox_ffn(x)
+        predicted_keypoints = self.keypoints_ffn(x)
+        return predicted_classes, predicted_bboxes, predicted_keypoints
 
 
 if __name__ == '__main__':
@@ -97,5 +94,7 @@ if __name__ == '__main__':
 
     x = torch.randn(16, 3, 256, 256)
     print(f'{x.size() = }')
-    y = model(x)
-    print(f'{y.size() = }')
+    predicted_classes, predicted_bboxes, predicted_keypoints = model(x)
+    print(f'{predicted_classes.shape = }')
+    print(f'{predicted_bboxes.shape = }')
+    print(f'{predicted_keypoints.shape = }')
