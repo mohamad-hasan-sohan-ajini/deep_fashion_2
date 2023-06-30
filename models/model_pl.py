@@ -135,6 +135,7 @@ class TransformerModelPL(LightningModule):
             + (mse_bbox_loss.sum() * ModelConfig.mse_bbox_loss_weight)
             + (keypoint_loss.sum() * ModelConfig.mse_keypoints_loss_weight)
         )
+        self.log('loss', loss)
         return {'loss': loss}
 
     def validation_step(
@@ -175,13 +176,19 @@ class TransformerModelPL(LightningModule):
         bbox_giou_wo0 = generalized_box_iou_loss(pred_bboxes[other_class_indices], gt_bboxes[other_class_indices], reduction='none')
         bbox_iou_w0 = self.point_criterion(pred_bboxes, gt_bboxes).sum(dim=1)
         bbox_iou_wo0 = self.point_criterion(pred_bboxes[other_class_indices], gt_bboxes[other_class_indices]).sum(dim=1)
+        self.log('class_accuracy_w0', class_accuracy_w0.sum())
+        self.log('class_accuracy_wo0', class_accuracy_wo0.sum())
+        self.log('bbox_giou_w0', bbox_giou_w0.sum())
+        self.log('bbox_giou_wo0', bbox_giou_wo0.sum())
+        self.log('bbox_iou_w0', bbox_iou_w0.sum())
+        self.log('bbox_iou_wo0', bbox_iou_wo0.sum())
         result_dict = {
-            'class_accuracy_w0': class_accuracy_w0,
-            'class_accuracy_wo0': class_accuracy_wo0,
-            'bbox_giou_w0': bbox_giou_w0,
-            'bbox_giou_wo0': bbox_giou_wo0,
-            'bbox_iou_w0': bbox_iou_w0,
-            'bbox_iou_wo0': bbox_iou_wo0,
+            'class_accuracy_w0': class_accuracy_w0.sum(),
+            'class_accuracy_wo0': class_accuracy_wo0.sum(),
+            'bbox_giou_w0': bbox_giou_w0.sum(),
+            'bbox_giou_wo0': bbox_giou_wo0.sum(),
+            'bbox_iou_w0': bbox_iou_w0.sum(),
+            'bbox_iou_wo0': bbox_iou_wo0.sum(),
         }
         return result_dict
 
