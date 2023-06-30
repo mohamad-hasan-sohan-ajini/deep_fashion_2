@@ -12,7 +12,7 @@ from albumentations.pytorch import ToTensorV2
 from torch import Tensor
 from torch.utils.data import Dataset
 
-from config import DataConfig, keypoint_indices
+from data.config import DataConfig, keypoint_indices
 
 val_transforms = A.Compose(
     [

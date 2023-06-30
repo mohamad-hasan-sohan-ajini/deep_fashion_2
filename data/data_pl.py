@@ -6,7 +6,7 @@ import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
-from data_pt import DeepFashion2Dataset, train_transforms, val_transforms
+from data.data_pt import DeepFashion2Dataset, train_transforms, val_transforms
 
 
 class DeepFashion2DataModule(LightningDataModule):

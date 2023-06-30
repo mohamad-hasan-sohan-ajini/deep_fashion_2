@@ -5,14 +5,14 @@ from typing import Callable
 import torch
 from torch import Tensor, nn
 
-from config import ModelConfig
-from object_queries import ObjectQueries
-from positional_encoding import (
+from models.config import ModelConfig
+from models.object_queries import ObjectQueries
+from models.positional_encoding import (
     PositionalEncoding2D,
     FixedPositionalEncoding2D,
     LearnablePositionalEncoding2D,
 )
-from utils import get_vgg_backbone, get_resnet_backbone
+from models.utils import get_vgg_backbone, get_resnet_backbone
 
 
 class TransformerModel(nn.Module):
