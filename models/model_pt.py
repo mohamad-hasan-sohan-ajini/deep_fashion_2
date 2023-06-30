@@ -9,6 +9,7 @@ from config import ModelConfig
 from match import Matcher
 from object_queries import ObjectQueries
 from positional_encoding import (
+    PositionalEncoding2D,
     FixedPositionalEncoding2D,
     LearnablePositionalEncoding2D,
 )
@@ -20,7 +21,7 @@ class TransformerModel(nn.Module):
             self,
             backbone_builder: Callable = get_resnet_backbone,
             feature_num_layers: int = 18,
-            positional_encoding_builder: Callable = FixedPositionalEncoding2D,
+            positional_encoding_builder: PositionalEncoding2D = FixedPositionalEncoding2D,
     ) -> None:
         super().__init__()
         # Feature extraction
