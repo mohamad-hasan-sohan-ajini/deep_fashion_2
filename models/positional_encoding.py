@@ -6,9 +6,8 @@ import torch
 from torch import Tensor, nn
 
 
-class FixedPositionalEncoding2D(nn.Module):
-    """Sinusoidal 2D Positional Encoding"""
-
+class PositionalEncoding2D(nn.Module):
+    """Sinusoidal 2D Positional Encoding Base Class"""
     def __init__(
             self,
             d_model: int,
@@ -58,7 +57,7 @@ class FixedPositionalEncoding2D(nn.Module):
             .unsqueeze(2)
             .repeat(1, 1, width)
         )
-        self.register_buffer('pe', pe)
+        self._pe = pe
 
     def forward(self, x: Tensor) -> Tensor:
         """Add positional encoding to the signal
@@ -71,7 +70,19 @@ class FixedPositionalEncoding2D(nn.Module):
         return x + self.pe
 
 
-class LearnablePositionalEncoding2D(nn.Module):
+class FixedPositionalEncoding2D(PositionalEncoding2D):
+    """Sinusoidal 2D Positional Encoding"""
+    def __init__(
+            self,
+            d_model: int,
+            height: int,
+            width: int,
+    ) -> None:
+        super().__init__(d_model, height, width)
+        self.register_buffer('pe', self._pe)
+
+
+class LearnablePositionalEncoding2D(PositionalEncoding2D):
     """Sinusoidal 2D Positional Encoding"""
 
     def __init__(
@@ -80,30 +91,8 @@ class LearnablePositionalEncoding2D(nn.Module):
             height: int,
             width: int,
     ) -> None:
-        """Initialize
-
-        :param d_model: Model hidden size
-        :type d_model: int
-        :param max_len: maximum length of input signal
-        :type max_len: int
-        """
-        super().__init__()
-        self.register_parameter(
-            'pe',
-            nn.Parameter(
-                FixedPositionalEncoding2D(d_model, height, width).pe.clone()
-            )
-        )
-
-    def forward(self, x: Tensor) -> Tensor:
-        """Add positional encoding to the signal
-
-        :param x: input of shape [batch_size, channels, height, width]
-        :type x: torch.Tensor
-        :returns: Positional encoded added signal
-        :rtype: torch.Tensor
-        """
-        return x + self.pe
+        super().__init__(d_model, height, width)
+        self.register_parameter('pe', nn.Parameter(self._pe))
 
 
 if __name__ == '__main__':
