@@ -7,20 +7,15 @@ from torch import Tensor, nn
 
 from models.config import ModelConfig
 from models.object_queries import ObjectQueries
-from models.positional_encoding import (
-    PositionalEncoding2D,
-    FixedPositionalEncoding2D,
-    LearnablePositionalEncoding2D,
-)
-from models.utils import get_vgg_backbone, get_resnet_backbone
+from models.positional_encoding import PositionalEncoding2D
 
 
 class TransformerModel(nn.Module):
     def __init__(
             self,
-            backbone_builder: Callable = get_resnet_backbone,
-            feature_num_layers: int = 18,
-            positional_encoding_builder: PositionalEncoding2D = FixedPositionalEncoding2D,
+            backbone_builder: Callable,
+            feature_num_layers: int,
+            positional_encoding_builder: PositionalEncoding2D,
     ) -> None:
         super().__init__()
         # Feature extraction
@@ -90,7 +85,17 @@ class TransformerModel(nn.Module):
 
 
 if __name__ == '__main__':
-    model = TransformerModel()
+    from models.positional_encoding import(
+        FixedPositionalEncoding2D,
+        LearnablePositionalEncoding2D,
+    )
+    from models.utils import get_vgg_backbone, get_resnet_backbone
+
+    model = TransformerModel(
+        get_resnet_backbone,
+        18,
+        FixedPositionalEncoding2D,
+    )
 
     x = torch.randn(16, 3, 256, 256)
     print(f'{x.size() = }')
