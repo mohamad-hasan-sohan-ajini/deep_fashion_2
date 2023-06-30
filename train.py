@@ -5,15 +5,16 @@ from data.data_pl import DeepFashion2DataModule
 from models.model_pl import TransformerModelPL
 
 datamodule = DeepFashion2DataModule(
-    '/home/aj/data/DeepFashion2/train',
-    '/home/aj/data/DeepFashion2/validation',
+    '/data/DeepFashion2/train',
+    '/data/DeepFashion2/validation',
+    batch_size=256,
 )
 datamodule.setup()
 model = TransformerModelPL()
 checkpoint_callback = ModelCheckpoint(
     save_top_k=3,
-    monitor='validation_loss',
-    mode='min',
+    monitor='class_accuracy_w0',
+    mode='max',
     save_last=True,
     every_n_train_steps=1_000,
 )
