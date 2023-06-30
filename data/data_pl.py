@@ -48,7 +48,7 @@ class DeepFashion2DataModule(LightningDataModule):
         )
 
     def val_dataloader(self) -> DataLoader:
-        DataLoader(
+        return DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
