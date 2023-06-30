@@ -19,9 +19,10 @@ class ModelConfig:
     class_matching_weight: float = 1.
     keypoint_matching_weight: float = 1e-2
     # loss function parameters
-    bbox_loss_weight: float = 5
-    class_loss_weight: float = 1
-    giou_loss_weight: float = 2
+    ce_class_loss_weight: float = 1
+    mse_bbox_loss_weight: float = 2
+    giou_bbox_loss_weight: float = 2
+    mse_keypoints_loss_weight: float = 1e-2
     class0_weight: float = 3e-2
     # optimizer and scheduler parameters
     feature_lr: float = 1e-4
