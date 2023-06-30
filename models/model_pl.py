@@ -50,6 +50,10 @@ class TransformerModelPL(LightningModule):
         class_weights[0] = ModelConfig.class0_weight
         self.class_criterion = nn.CrossEntropyLoss(weight=class_weights)
         self.point_criterion = nn.SmoothL1Loss(reduction='none')
+        self.accuracy = accuracy = Accuracy(
+            task="multiclass",
+            num_classes=ModelConfig.num_classes,
+        )
 
     def forward(self, images: Tensor) -> Tensor:
         return self.model(images)
@@ -141,7 +145,48 @@ class TransformerModelPL(LightningModule):
             batch: tuple[Tensor, Tensor, Tensor, Tensor, Tensor],
             batch_index: int,
     ) -> dict[str, Tensor]:
-        return self.training_step(batch, batch_index)
+        images, gt_classes, gt_bboxes, gt_keypoints, gt_visibilities = batch
+        pred_classes, pred_bboxes, pred_keypoints = self(images)
+        # find best matchings
+        target_indices = self.matcher(
+            pred_classes,
+            gt_classes,
+            pred_bboxes,
+            gt_bboxes,
+            pred_keypoints,
+            gt_keypoints,
+            gt_visibilities,
+        )
+        # collapse batch and objects dims in predictions
+        pred_classes = pred_classes.view(-1, ModelConfig.num_classes)
+        pred_bboxes = pred_bboxes.view(-1, 4)
+        pred_keypoints = pred_keypoints.view(-1, ModelConfig.num_keypoints, 2)
+        # shuffle GT indices
+        gt_classes = gt_classes.view(-1)[target_indices]
+        gt_bboxes = gt_bboxes.view(-1, 4)[target_indices]
+        gt_keypoints = gt_keypoints.view(-1, ModelConfig.num_keypoints, 2)
+        gt_keypoints = gt_keypoints[target_indices]
+        gt_visibilities = gt_visibilities.view(-1, ModelConfig.num_keypoints)
+        gt_visibilities = gt_visibilities[target_indices]
+        # create class0 mask to be used in loss computation of bboxes
+        # and keypoints
+        other_class_indices = (gt_classes > 0).float().nonzero().view(-1)
+        # compute metrics
+        class_accuracy_w0 = self.accuracy(pred_classes.argmax(dim=1), gt_classes)
+        class_accuracy_wo0 = self.accuracy(pred_classes[other_class_indices].argmax(dim=1), gt_classes[class0_indices])
+        bbox_giou_w0 = generalized_box_iou_loss(pred_bboxes, gt_bboxes, reduction='none')
+        bbox_giou_wo0 = generalized_box_iou_loss(pred_bboxes[other_class_indices], gt_bboxes[other_class_indices], reduction='none')
+        bbox_iou_w0 = self.point_criterion(pred_bboxes, gt_bboxes).sum(dim=1)
+        bbox_iou_wo0 = self.point_criterion(pred_bboxes[other_class_indices], gt_bboxes[other_class_indices]).sum(dim=1)
+        result_dict = {
+            'class_accuracy_w0': class_accuracy_w0,
+            'class_accuracy_wo0': class_accuracy_wo0,
+            'bbox_giou_w0': bbox_giou_w0,
+            'bbox_giou_wo0': bbox_giou_wo0,
+            'bbox_iou_w0': bbox_iou_w0,
+            'bbox_iou_wo0': bbox_iou_wo0,
+        }
+        return result_dict
 
 
 if __name__ == '__main__':
