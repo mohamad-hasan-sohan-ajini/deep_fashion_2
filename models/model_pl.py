@@ -117,11 +117,7 @@ class TransformerModelPL(LightningModule):
         # compute loss
         class_loss = self.class_criterion(pred_classes, gt_classes)
         giou_bbox_loss = (
-            generalized_box_iou_loss(
-                pred_bboxes.view(-1, 4),
-                gt_bboxes,
-                reduction='none',
-            )
+            generalized_box_iou_loss(pred_bboxes, gt_bboxes, reduction='none')
             * class0_mask
         )
         mse_bbox_loss = (
@@ -134,9 +130,9 @@ class TransformerModelPL(LightningModule):
         # sum up losses
         loss = (
             (class_loss * ModelConfig.ce_class_loss_weight)
-            + (giou_bbox_loss * ModelConfig.giou_bbox_loss_weight)
-            + (mse_bbox_loss * ModelConfig.mse_bbox_loss_weight)
-            + (keypoint_loss * ModelConfig.mse_keypoints_loss_weight)
+            + (giou_bbox_loss.sum() * ModelConfig.giou_bbox_loss_weight)
+            + (mse_bbox_loss.sum() * ModelConfig.mse_bbox_loss_weight)
+            + (keypoint_loss.sum() * ModelConfig.mse_keypoints_loss_weight)
         )
         return {'loss': loss}
 
