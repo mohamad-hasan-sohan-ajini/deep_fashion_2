@@ -66,6 +66,6 @@ if __name__ == '__main__':
     train_dl = dm.train_dataloader()
     val_dl = dm.val_dataloader()
     from tqdm import tqdm
-    for image, classes, bboxes, keypoints, visibilities in tqdm(train_dl):
+    for images, classes, bboxes, keypoints, visibilities in tqdm(train_dl):
         print(classes)
         break
