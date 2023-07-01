@@ -79,8 +79,8 @@ class TransformerModel(nn.Module):
         x = self.decoder(targets, memory)
         # run heads
         predicted_classes = self.class_ffn(x)
-        predicted_bboxes = self.bbox_ffn(x)
-        predicted_keypoints = self.keypoints_ffn(x)
+        predicted_bboxes = self.bbox_ffn(x).sigmoid()
+        predicted_keypoints = self.keypoints_ffn(x).sigmoid()
         predicted_keypoints = (
             predicted_keypoints
             .view(batch_size, -1, ModelConfig.num_keypoints, 2)
