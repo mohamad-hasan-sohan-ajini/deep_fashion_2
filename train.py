@@ -8,7 +8,7 @@ from models.model_pl import TransformerModelPL
 datamodule = DeepFashion2DataModule(
     '/data/DeepFashion2/train',
     '/data/DeepFashion2/validation',
-    batch_size=256,
+    batch_size=24,
 )
 datamodule.setup()
 model = TransformerModelPL()
