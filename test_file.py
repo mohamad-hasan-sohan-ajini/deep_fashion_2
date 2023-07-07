@@ -11,12 +11,16 @@ from data.config import DataConfig, keypoint_indices
 from models.model_pl import TransformerModelPL
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--image-path', default='/data/DeepFashion2/test/image/000001.jpg')
+parser.add_argument('--image-path', default='/home/aj/data/DeepFashion2/test/image/000001.jpg')
+parser.add_argument('--checkpoint-path', default='lightning_logs/version_3/checkpoints/epoch=5-step=42000.ckpt')
+parser.add_argument('--device', default='cpu')
+parser.add_argument('--device-index', type=int, default=0)
 args = parser.parse_args()
 
-CHECKPOINT_PATH = 'lightning_logs/version_1/checkpoints/epoch=122-step=92000.ckpt'
-device = torch.device('cuda', index=0)
-class_threshold = .5
+if args.device == 'cpu':
+    device = torch.device(args.device)
+else:
+    device = torch.device(args.device, index=args.device_index)
 
 # data
 image_transforms = A.Compose(
@@ -45,8 +49,10 @@ x = x.view(1, 3, DataConfig.IMAGE_SIZE, DataConfig.IMAGE_SIZE)
 x = x.to(device)
 
 # model
-model = TransformerModelPL.load_from_checkpoint(CHECKPOINT_PATH)
-model.to(device)
+model = TransformerModelPL.load_from_checkpoint(
+    args.checkpoint_path,
+    map_location=device,
+)
 
 # inference
 with torch.inference_mode():
