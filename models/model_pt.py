@@ -19,7 +19,10 @@ class TransformerModel(nn.Module):
     ) -> None:
         super().__init__()
         # Feature extraction
-        self.feature_extractor = backbone_builder(feature_num_layers)
+        self.feature_extractor = backbone_builder(
+            feature_num_layers,
+            ModelConfig.d_model,
+        )
         # Transformer encoder
         encoder_layer = nn.TransformerEncoderLayer(
             ModelConfig.d_model,

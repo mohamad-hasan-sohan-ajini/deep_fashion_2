@@ -29,7 +29,7 @@ class TransformerModelPL(LightningModule):
     def __init__(
             self,
             backbone_builder: Callable = get_resnet_backbone,
-            feature_num_layers: int = 18,
+            feature_num_layers: int = 101,
             positional_encoding_builder: PositionalEncoding2D = FixedPositionalEncoding2D,
     ) -> None:
         super().__init__()
