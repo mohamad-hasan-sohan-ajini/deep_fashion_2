@@ -22,8 +22,8 @@ class ModelConfig:
     ce_class_loss_weight: float = 1
     mse_bbox_loss_weight: float = 2
     giou_bbox_loss_weight: float = 2
-    mse_keypoints_loss_weight: float = 1e-2
-    class0_weight: float = 3e-2
+    mse_keypoints_loss_weight: float = 1
+    class0_weight: float = 1e-1
     # optimizer and scheduler parameters
     feature_lr: float = 1e-4
     transformer_lr: float = 1e-5
