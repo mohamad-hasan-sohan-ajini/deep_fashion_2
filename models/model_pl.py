@@ -4,7 +4,6 @@ from itertools import chain
 from typing import Any, Callable
 
 from pytorch_lightning import LightningModule
-from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import Tensor, nn, ones, optim
 from torchmetrics import Accuracy
 from torchvision.ops import generalized_box_iou_loss
