@@ -56,26 +56,41 @@ class TransformerModel(nn.Module):
             ModelConfig.d_model,
             ModelConfig.max_objects,
         )
-        self.class_ffn = nn.Linear(
-            ModelConfig.d_model,
-            ModelConfig.num_classes,
+        self.class_ffn = nn.Sequential(
+            nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
+            nn.BatchNorm1d(ModelConfig.d_model),
+            nn.LeakyReLU(inplace=True),
+            nn.Linear(ModelConfig.d_model, ),
+            nn.BatchNorm1d(ModelConfig.d_model),
+            nn.LeakyReLU(inplace=True),
+            nn.Linear(ModelConfig.d_model, ),
+            nn.BatchNorm1d(ModelConfig.d_model),
+            nn.LeakyReLU(inplace=True),
+            nn.Linear(ModelConfig.d_model, ModelConfig.num_classes),
         )
+
         self.bbox_ffn = nn.Sequential(
             nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
+            nn.BatchNorm1d(ModelConfig.d_model),
             nn.LeakyReLU(inplace=True),
             nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
+            nn.BatchNorm1d(ModelConfig.d_model),
             nn.LeakyReLU(inplace=True),
             nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
+            nn.BatchNorm1d(ModelConfig.d_model),
             nn.LeakyReLU(inplace=True),
             nn.Linear(ModelConfig.d_model, 4),
             nn.Sigmoid(),
         )
         self.keypoints_ffn = nn.Sequential(
             nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
+            nn.BatchNorm1d(ModelConfig.d_model),
             nn.LeakyReLU(inplace=True),
             nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
+            nn.BatchNorm1d(ModelConfig.d_model),
             nn.LeakyReLU(inplace=True),
             nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
+            nn.BatchNorm1d(ModelConfig.d_model),
             nn.LeakyReLU(inplace=True),
             nn.Linear(ModelConfig.d_model, 2 * ModelConfig.num_keypoints),
             nn.Sigmoid(),
