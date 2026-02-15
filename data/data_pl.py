@@ -11,12 +11,12 @@ from data.data_pt import DeepFashion2Dataset, train_transforms, val_transforms
 
 class DeepFashion2DataModule(LightningDataModule):
     def __init__(
-            self,
-            train_base_path: str,
-            val_base_path: str,
-            max_objects: int = 10,
-            batch_size: int = 64,
-            num_workers: int = 8,
+        self,
+        train_base_path: str,
+        val_base_path: str,
+        max_objects: int = 10,
+        batch_size: int = 64,
+        num_workers: int = 8,
     ) -> None:
         super().__init__()
         self.train_base_path = train_base_path
@@ -57,15 +57,16 @@ class DeepFashion2DataModule(LightningDataModule):
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     dm = DeepFashion2DataModule(
-       '/home/aj/data/DeepFashion2/train',
-       '/home/aj/data/DeepFashion2/validation',
+        "/home/aj/data/DeepFashion2/train",
+        "/home/aj/data/DeepFashion2/validation",
     )
     dm.setup()
     train_dl = dm.train_dataloader()
     val_dl = dm.val_dataloader()
     from tqdm import tqdm
+
     for images, classes, bboxes, keypoints, visibilities in tqdm(train_dl):
         print(classes)
         break
