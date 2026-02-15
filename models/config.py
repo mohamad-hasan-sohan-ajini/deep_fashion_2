@@ -6,8 +6,7 @@ from dataclasses import dataclass
 @dataclass
 class ModelConfig:
     d_model: int = 512
-    nhead: int = 8
-    dropout: float = .1
+    dropout: float = 0.1
     num_layers: int = 6
     height: int = 32
     width: int = 32
@@ -15,8 +14,8 @@ class ModelConfig:
     num_classes: int = 13 + 1
     num_keypoints: int = 294
     # matcher parameters
-    bbox_matching_weight: float = 5.
-    class_matching_weight: float = 1.
+    bbox_matching_weight: float = 5.0
+    class_matching_weight: float = 1.0
     keypoint_matching_weight: float = 1e-2
     # loss function parameters
     ce_class_loss_weight: float = 1
