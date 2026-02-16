@@ -10,9 +10,9 @@ from torch.nn import functional as F
 
 
 def hard_classification_cost_function(
-        pred_logits: Tensor,
-        target_classes: Tensor,
-        _: int,
+    pred_logits: Tensor,
+    target_classes: Tensor,
+    _: int,
 ) -> Tensor:
     pred_classes = pred_logits.argmax(-1).float().unsqueeze(-1)
     target_classes = target_classes.float().unsqueeze(-1)
@@ -21,9 +21,9 @@ def hard_classification_cost_function(
 
 
 def soft_classification_cost_function(
-        pred_logits: Tensor,
-        target_classes: Tensor,
-        num_classes: int,
+    pred_logits: Tensor,
+    target_classes: Tensor,
+    num_classes: int,
 ) -> Tensor:
     pred_classes = pred_logits.softmax(-1)
     target_classes = F.one_hot(target_classes, num_classes).float()
@@ -37,12 +37,12 @@ def bbox_cost_function(pred_bboxes: Tensor, target_bboxes: Tensor) -> Tensor:
 
 
 def keypoint_cost_function(
-        pred_keypoints: Tensor,
-        target_keypoints: Tensor,
-        visibilities: Tensor,
+    pred_keypoints: Tensor,
+    target_keypoints: Tensor,
+    visibilities: Tensor,
 ) -> Tensor:
     batch_size, num_objects, *_ = pred_keypoints.size()
-    pred_keypoints = (pred_keypoints * visibilities)
+    pred_keypoints = pred_keypoints * visibilities
     pred_keypoints = pred_keypoints.view(batch_size, num_objects, -1)
     target_keypoints = target_keypoints * visibilities
     target_keypoints = target_keypoints.view(batch_size, num_objects, -1)
@@ -52,14 +52,14 @@ def keypoint_cost_function(
 
 class Matcher:
     def __init__(
-            self,
-            classification_cost_function: Callable[[Tensor, Tensor], Tensor],
-            classification_weight: float,
-            bbox_cost_function: Callable[[Tensor, Tensor], Tensor],
-            bbox_weight: float,
-            keypoint_cost_function: Callable[[Tensor, Tensor], Tensor],
-            keypoint_weight: float,
-            num_classes: int,
+        self,
+        classification_cost_function: Callable[[Tensor, Tensor], Tensor],
+        classification_weight: float,
+        bbox_cost_function: Callable[[Tensor, Tensor], Tensor],
+        bbox_weight: float,
+        keypoint_cost_function: Callable[[Tensor, Tensor], Tensor],
+        keypoint_weight: float,
+        num_classes: int,
     ) -> None:
         """Initialize
 
@@ -93,14 +93,14 @@ class Matcher:
 
     @torch.inference_mode()
     def __call__(
-            self,
-            pred_logits: Tensor,
-            target_classes: Tensor,
-            pred_bboxes: Tensor,
-            target_bboxes: Tensor,
-            pred_keypoints: Tensor,
-            target_keypoints: Tensor,
-            visibilities: Tensor,
+        self,
+        pred_logits: Tensor,
+        target_classes: Tensor,
+        pred_bboxes: Tensor,
+        target_bboxes: Tensor,
+        pred_keypoints: Tensor,
+        target_keypoints: Tensor,
+        visibilities: Tensor,
     ) -> list:
         costs = (
             (
@@ -111,10 +111,7 @@ class Matcher:
                     self.num_classes,
                 )
             )
-            + (
-                self.bbox_weight
-                * self.bbox_cost_function(pred_bboxes, target_bboxes)
-            )
+            + (self.bbox_weight * self.bbox_cost_function(pred_bboxes, target_bboxes))
             + (
                 self.keypoint_weight
                 * self.keypoint_cost_function(
@@ -132,7 +129,7 @@ class Matcher:
         return np.stack(target_indices)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     torch.manual_seed(18)
 
     cost_mat = np.array(
@@ -154,29 +151,29 @@ if __name__ == '__main__':
         ],
         dtype=torch.int64,
     )
-    print(f'{target_classes = }')
+    print(f"{target_classes = }")
     pred_logits = torch.randn(2, 4, 6)
-    print(f'{pred_logits.softmax(-1) = }')
-    print(f'{pred_logits.argmax(-1) = }')
+    print(f"{pred_logits.softmax(-1) = }")
+    print(f"{pred_logits.argmax(-1) = }")
     # call functions
     hard_cost = hard_classification_cost_function(
         pred_logits.clone(),
         target_classes.clone(),
         0,
     )
-    print(f'{hard_cost = }')
+    print(f"{hard_cost = }")
     soft_cost = soft_classification_cost_function(
         pred_logits.clone(),
         target_classes.clone(),
         6,
     )
-    print(f'{soft_cost = }')
+    print(f"{soft_cost = }")
 
     # test bbox cost function
     target_bboxes = torch.randn(2, 4, 4)
     pred_bboxes = torch.randn(2, 4, 4)
     bbox_cost = bbox_cost_function(pred_bboxes, target_bboxes)
-    print(f'{bbox_cost.shape = }')
+    print(f"{bbox_cost.shape = }")
 
     # test keypoints cost function
     target_keypoints = torch.randn(2, 4, 294, 2)
@@ -187,7 +184,7 @@ if __name__ == '__main__':
         target_keypoints,
         visibilities,
     )
-    print(f'{keypoints_cost.shape = }')
+    print(f"{keypoints_cost.shape = }")
 
     # matcher test
     matcher = Matcher(
@@ -208,14 +205,18 @@ if __name__ == '__main__':
         target_keypoints,
         visibilities,
     )
-    print(f'{flatten_indices = }')
+    print(f"{flatten_indices = }")
 
     # compute loss: in case 2 minimum loss is computed
     # flatten_indices = (target_indices + np.array([[0], [4]])).reshape(-1)
     criterion = torch.nn.CrossEntropyLoss()
     loss0 = criterion(pred_logits.view(-1, 6), target_classes.reshape(-1)).item()
-    print(f'{loss0 = }')
-    loss1 = criterion(pred_logits.view(-1, 6)[flatten_indices], target_classes.reshape(-1)).item()
-    print(f'{loss1 = }')
-    loss2 = criterion(pred_logits.view(-1, 6), target_classes.reshape(-1)[flatten_indices]).item()
-    print(f'{loss2 = }')
+    print(f"{loss0 = }")
+    loss1 = criterion(
+        pred_logits.view(-1, 6)[flatten_indices], target_classes.reshape(-1)
+    ).item()
+    print(f"{loss1 = }")
+    loss2 = criterion(
+        pred_logits.view(-1, 6), target_classes.reshape(-1)[flatten_indices]
+    ).item()
+    print(f"{loss2 = }")
