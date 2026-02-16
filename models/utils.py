@@ -21,8 +21,8 @@ class ConvLayer(nn.Module):
 def get_vgg_backbone(num_layers: int, d_model: int) -> nn.Module:
     # valid num_layers: {11, 13, 16, 19}
     vgg_model = torch.hub.load(
-        'pytorch/vision:v0.10.0',
-        f'vgg{num_layers}_bn',
+        "pytorch/vision:v0.10.0",
+        f"vgg{num_layers}_bn",
         pretrained=True,
     )
     num_maxpools = 0
@@ -41,8 +41,8 @@ def get_vgg_backbone(num_layers: int, d_model: int) -> nn.Module:
 def get_resnet_backbone(num_layers: int, d_model: int) -> nn.Module:
     # valid num_layers: {18, 34, 50, 101, 152}
     resnet_model = torch.hub.load(
-        'pytorch/vision:v0.10.0',
-        f'resnet{num_layers}',
+        "pytorch/vision:v0.10.0",
+        f"resnet{num_layers}",
         pretrained=True,
     )
     in_channels = 128 if num_layers in [18, 34] else 512
