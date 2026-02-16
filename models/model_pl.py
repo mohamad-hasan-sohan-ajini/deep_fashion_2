@@ -74,8 +74,12 @@ class TransformerModelPL(LightningModule):
                 {
                     'params': chain(
                         self.model.feature_extractor.parameters(),
-                        self.model.encoder.parameters(),
-                        self.model.decoder.parameters(),
+                        self.model.encoder1.parameters(),
+                        self.model.encoder2.parameters(),
+                        self.model.encoder3.parameters(),
+                        self.model.decoder1.parameters(),
+                        self.model.decoder2.parameters(),
+                        self.model.decoder3.parameters(),
                     ),
                     'lr': ModelConfig.transformer_lr,
                 },
