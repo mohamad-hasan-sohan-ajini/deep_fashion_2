@@ -157,7 +157,7 @@ class TransformerModel(nn.Module):
         self.class_ffn = nn.Sequential(
             nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
             nn.LeakyReLU(inplace=True),
-            nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
+            nn.Linear(ModelConfig.d_model, ModelConfig.num_classes),
         )
         self.bbox_ffn = nn.Sequential(
             nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
