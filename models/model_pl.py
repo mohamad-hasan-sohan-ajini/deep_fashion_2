@@ -188,7 +188,8 @@ class TransformerModelPL(LightningModule):
         )
         bbox_iou_w0 = self.point_criterion(pred_bboxes, gt_bboxes).sum(dim=1)
         bbox_iou_wo0 = self.point_criterion(
-            pred_bboxes[other_class_indices], gt_bboxes[other_class_indices]
+            pred_bboxes[other_class_indices],
+            gt_bboxes[other_class_indices],
         ).sum(dim=1)
         self.log("class_accuracy_w0", class_accuracy_w0.sum())
         self.log("class_accuracy_wo0", class_accuracy_wo0.sum())
