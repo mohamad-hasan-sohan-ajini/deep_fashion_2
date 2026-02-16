@@ -5,22 +5,22 @@ from dataclasses import dataclass
 
 @dataclass
 class ModelConfig:
-    d_model: int = 512
+    d_model: int = 1024
     dropout: float = 0.1
     num_layers: int = 6
     height: int = 32
     width: int = 32
-    max_objects: int = 10
+    max_objects: int = 100
     num_classes: int = 13 + 1
     num_keypoints: int = 294
     # matcher parameters
-    bbox_matching_weight: float = 5.0
+    bbox_matching_weight: float = 1e-2
     class_matching_weight: float = 1.0
     keypoint_matching_weight: float = 1e-2
     # loss function parameters
     ce_class_loss_weight: float = 1
-    mse_bbox_loss_weight: float = 2
-    giou_bbox_loss_weight: float = 2
+    mse_bbox_loss_weight: float = 1
+    giou_bbox_loss_weight: float = 1
     mse_keypoints_loss_weight: float = 1
     class0_weight: float = 1e-1
     # optimizer and scheduler parameters
