@@ -23,3 +23,4 @@ keypoint_indices = {
 class DataConfig:
     IMAGE_SIZE: int = 256
     NUM_KEYPOINTS: int = 294
+    MAX_OBJECTS: int = 100

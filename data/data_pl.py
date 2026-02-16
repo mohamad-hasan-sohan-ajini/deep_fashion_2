@@ -7,6 +7,7 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
 from data.data_pt import DeepFashion2Dataset, train_transforms, val_transforms
+from data.config import DataConfig
 
 
 class DeepFashion2DataModule(LightningDataModule):
@@ -14,7 +15,7 @@ class DeepFashion2DataModule(LightningDataModule):
         self,
         train_base_path: str,
         val_base_path: str,
-        max_objects: int = 10,
+        max_objects: int = DataConfig.MAX_OBJECTS,
         batch_size: int = 64,
         num_workers: int = 8,
     ) -> None:
