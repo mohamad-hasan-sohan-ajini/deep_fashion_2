@@ -6,21 +6,21 @@ from data.data_pl import DeepFashion2DataModule
 from models.model_pl import TransformerModelPL
 
 datamodule = DeepFashion2DataModule(
-    '/data/DeepFashion2/train',
-    '/data/DeepFashion2/validation',
-    batch_size=24,
+    "/home/aj/data/DeepFashion2/train",
+    "/home/aj/data/DeepFashion2/validation",
+    batch_size=16,
 )
 datamodule.setup()
 model = TransformerModelPL()
-logger = TensorBoardLogger('.')
+logger = TensorBoardLogger(".")
 checkpoint_callback = ModelCheckpoint(
     save_top_k=3,
-    monitor='class_accuracy_w0',
-    mode='max',
+    monitor="class_accuracy_w0",
+    mode="max",
     save_last=True,
     every_n_train_steps=1000,
 )
-lr_callback = LearningRateMonitor('step')
+lr_callback = LearningRateMonitor("step")
 trainer = Trainer(
     # gpus=0,
     # precision=16,
