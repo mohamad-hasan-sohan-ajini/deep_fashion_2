@@ -48,17 +48,23 @@ class PositionalEncoding2D(nn.Module):
         pe[d_model + 1 :: 2, :, :] = (
             torch.cos(pos_h * div_term).transpose(0, 1).unsqueeze(2).repeat(1, 1, width)
         )
-        self._pe = pe.view(d_model * 2, -1).permute(1, 0).contiguous()
+        self._pe = pe.unsqueeze(0).contiguous()
 
     def forward(self, x: Tensor) -> Tensor:
         """Add positional encoding to the signal
 
-        :param x: input of shape [batch_size, channels, height, width]
+        :param x: input of shape [batch_size, channels, height, width] or
+            [batch_size, height * width, channels]
         :type x: torch.Tensor
         :returns: Positional encoded added signal
         :rtype: torch.Tensor
         """
-        return x + self.pe
+        if x.dim() == 4:
+            return x + self.pe
+
+        if x.dim() == 3:
+            pe = self.pe.flatten(2).transpose(1, 2).contiguous()
+            return x + pe
 
 
 class FixedPositionalEncoding2D(PositionalEncoding2D):
@@ -90,9 +96,15 @@ class LearnablePositionalEncoding2D(PositionalEncoding2D):
 if __name__ == "__main__":
     d_model = 128
     height, width = 32, 32
-    fix_pe2d = FixedPositionalEncoding2D(d_model, height, width)
+    batch_size = 16
+
+    fixed_pe2d = FixedPositionalEncoding2D(d_model, height, width)
     learnable_pe2d = LearnablePositionalEncoding2D(d_model, height, width)
 
-    x = torch.randn(16, d_model, 32, 32)
-    yf = fix_pe2d(x)
+    x = torch.randn(batch_size, d_model, height, width)
+    yf = fixed_pe2d(x)
     yl = learnable_pe2d(x)
+
+    print(yf.shape, yl.shape)
+    print(torch.allclose(yf - x, fixed_pe2d.pe, atol=1e-6))
+    print(torch.allclose(yl - x, learnable_pe2d.pe, atol=1e-6))
