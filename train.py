@@ -8,7 +8,7 @@ from models.model_pl import TransformerModelPL
 datamodule = DeepFashion2DataModule(
     "/home/aj/data/DeepFashion2/train",
     "/home/aj/data/DeepFashion2/validation",
-    batch_size=16,
+    batch_size=4,
 )
 datamodule.setup()
 model = TransformerModelPL()
@@ -26,7 +26,7 @@ trainer = Trainer(
     # precision=16,
     max_epochs=1000,
     callbacks=[checkpoint_callback, lr_callback],
-    accumulate_grad_batches=1,
+    accumulate_grad_batches=8,
     log_every_n_steps=100,
     logger=logger,
 )
