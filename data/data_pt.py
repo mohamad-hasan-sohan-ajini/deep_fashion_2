@@ -206,6 +206,7 @@ class DeepFashion2Dataset(Dataset):
 
 
 if __name__ == "__main__":
+    # run this test in root dir with: python -m data.data_pt
     ds = DeepFashion2Dataset(
         base_path="/home/aj/data/DeepFashion2/validation",
         transforms=train_transforms,
@@ -216,3 +217,7 @@ if __name__ == "__main__":
     from torchvision.utils import save_image
 
     save_image(image, "/tmp/tmp.png")
+
+    from IPython import embed
+
+    embed()
