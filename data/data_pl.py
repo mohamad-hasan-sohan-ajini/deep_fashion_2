@@ -6,8 +6,8 @@ import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
-from data.data_pt import DeepFashion2Dataset, train_transforms, val_transforms
-from data.config import DataConfig
+from data_pt import DeepFashion2Dataset, train_transforms, val_transforms
+from config import DataConfig
 
 
 class DeepFashion2DataModule(LightningDataModule):
@@ -68,6 +68,10 @@ if __name__ == "__main__":
     val_dl = dm.val_dataloader()
     from tqdm import tqdm
 
-    for images, classes, bboxes, keypoints, visibilities in tqdm(train_dl):
-        print(classes)
+    for images, targets, bboxes, keypoints, visibilities in tqdm(train_dl):
+        print(f"{targets = }")
         break
+
+    from IPython import embed
+
+    embed()

@@ -12,7 +12,7 @@ from albumentations.pytorch import ToTensorV2
 from torch import Tensor
 from torch.utils.data import Dataset
 
-from .config import DataConfig, keypoint_indices
+from config import DataConfig, keypoint_indices
 
 val_transforms = A.Compose(
     [
@@ -213,7 +213,13 @@ if __name__ == "__main__":
         # transforms=val_transforms,
         max_objects=10,
     )
-    image, classes, bboxes, keypoints, visibilities = ds[0]
+    image, targets, bboxes, keypoints, visibilities = ds[0]
+    print(f"image shape: {image.shape}")
+    print(f"{targets = }")
+    print(f"bboxes shape: {bboxes.shape}")
+    print(f"keypoints shape: {keypoints.shape}")
+    print(f"visibilities shape: {visibilities.shape}")
+
     from torchvision.utils import save_image
 
     save_image(image, "/tmp/tmp.png")
