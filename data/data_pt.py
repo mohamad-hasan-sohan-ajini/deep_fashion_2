@@ -148,7 +148,10 @@ class DeepFashion2Dataset(Dataset):
             result[i, start:end] = visibility
         return result
 
-    def _getitem(self, index: int) -> tuple[Tensor]:
+    def _getitem(
+        self,
+        index: int,
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         # create paths
         image_path = self._base_path / f"image/{index + 1:06d}.jpg"
         annotation_path = self._base_path / f"annos/{index + 1:06d}.json"
@@ -196,9 +199,13 @@ class DeepFashion2Dataset(Dataset):
         bboxes = self._pad_bboxes(bboxes)
         keypoints = self._pad_keypoints(keypoints, classes)
         visibilities = self._pad_visibilities(visibilities, classes)
-        return image, classes, bboxes, keypoints, visibilities
+        object_mask = classes != 0
+        return image, classes, bboxes, keypoints, visibilities, object_mask
 
-    def __getitem__(self, index: int) -> tuple[Tensor]:
+    def __getitem__(
+        self,
+        index: int,
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         try:
             return self._getitem(index)
         except Exception:
@@ -213,12 +220,13 @@ if __name__ == "__main__":
         # transforms=val_transforms,
         max_objects=10,
     )
-    image, targets, bboxes, keypoints, visibilities = ds[0]
+    image, targets, bboxes, keypoints, visibilities, object_mask = ds[0]
     print(f"image shape: {image.shape}")
     print(f"{targets = }")
     print(f"bboxes shape: {bboxes.shape}")
     print(f"keypoints shape: {keypoints.shape}")
     print(f"visibilities shape: {visibilities.shape}")
+    print(f"{object_mask = }")
 
     from torchvision.utils import save_image
 

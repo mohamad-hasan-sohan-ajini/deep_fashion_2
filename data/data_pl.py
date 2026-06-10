@@ -68,8 +68,11 @@ if __name__ == "__main__":
     val_dl = dm.val_dataloader()
     from tqdm import tqdm
 
-    for images, targets, bboxes, keypoints, visibilities in tqdm(train_dl):
+    for images, targets, bboxes, keypoints, visibilities, object_mask in tqdm(
+        train_dl,
+    ):
         print(f"{targets = }")
+        print(f"{object_mask = }")
         break
 
     from IPython import embed
