@@ -84,7 +84,7 @@ def main() -> None:
     trainer.fit(
         model,
         datamodule=datamodule,
-        ckpt_path=str(args.ckpt_path) if args.ckpt_path else None,
+        ckpt_path=args.ckpt_path,
     )
 
 
