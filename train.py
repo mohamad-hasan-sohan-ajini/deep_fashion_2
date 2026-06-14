@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--max-epochs", type=int, default=1000)
     parser.add_argument("--accumulate-grad-batches", type=int, default=8)
-    parser.add_argument("--log-every-n-steps", type=int, default=1000)
+    parser.add_argument("--log-every-n-steps", type=int, default=100)
     parser.add_argument("--accelerator", default="auto")
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--precision", default="32-true")
@@ -31,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--log-dir",
         type=Path,
-        default=Path("lightning_logs"),
+        default=Path("."),
         help="Root directory for TensorBoard logs and checkpoints",
     )
     parser.add_argument(
