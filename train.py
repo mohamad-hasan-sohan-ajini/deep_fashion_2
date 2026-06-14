@@ -1,12 +1,14 @@
 """Train the DeepFashion2 transformer model."""
 
 import argparse
+from dataclasses import asdict
 from pathlib import Path
 
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
+from config import DataConfig, ModelConfig
 from data.data_pl import DeepFashion2DataModule
 from models.model_pl import TransformerModelPL
 
@@ -31,12 +33,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--log-dir",
         type=Path,
-        default=Path("."),
+        default=Path("runs"),
         help="Root directory for TensorBoard logs and checkpoints",
     )
     parser.add_argument(
         "--ckpt-path",
         type=Path,
+        default=None,
         help="Checkpoint from which to resume training",
     )
     parser.add_argument(
@@ -62,29 +65,55 @@ def main() -> None:
     )
     # check defaults in model_pl.py for default constructors and parameters
     model = TransformerModelPL()
-    logger = TensorBoardLogger(save_dir=args.log_dir, name="lightning_logs")
+    logger = TensorBoardLogger(
+        save_dir=args.log_dir,
+        name="",
+        version="",
+        default_hp_metric=False,
+    )
     checkpoint_callback = ModelCheckpoint(
-        monitor="class_accuracy_w0",
+        monitor="class_accuracy/val",
         mode="max",
         save_top_k=3,
         save_last=True,
         every_n_epochs=1,
-        filename="{epoch:04d}-{class_accuracy_w0:.4f}",
+        filename="{epoch:04d}-{step}",
+        auto_insert_metric_name=False,
     )
     trainer = Trainer(
         accelerator=args.accelerator,
         devices=args.devices,
         precision=args.precision,
         max_epochs=args.max_epochs,
-        callbacks=[
-            checkpoint_callback,
-            LearningRateMonitor(logging_interval="step"),
-        ],
+        callbacks=[checkpoint_callback],
         accumulate_grad_batches=args.accumulate_grad_batches,
         log_every_n_steps=args.log_every_n_steps,
         logger=logger,
         fast_dev_run=args.fast_dev_run,
     )
+    run_config = {
+        "data": asdict(DataConfig()),
+        "model": asdict(ModelConfig()),
+        "training": {
+            key: str(value) if isinstance(value, Path) else value
+            for key, value in vars(args).items()
+        },
+    }
+    logger.experiment.add_text(
+        "device",
+        str(trainer.strategy.root_device),
+        0,
+    )
+    logger.experiment.add_text(
+        "config",
+        "\n".join(
+            f"{section}.{key}: {value}"
+            for section, values in run_config.items()
+            for key, value in values.items()
+        ),
+        0,
+    )
+    logger.experiment.flush()
     trainer.fit(
         model,
         datamodule=datamodule,
