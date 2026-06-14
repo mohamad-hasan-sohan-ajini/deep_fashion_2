@@ -56,6 +56,7 @@ def main() -> None:
         batch_size=args.batch_size,
         num_workers=args.num_workers,
     )
+    # check defaults in model_pl.py for default constructors and parameters
     model = TransformerModelPL()
     logger = TensorBoardLogger(save_dir=args.log_dir, name="lightning_logs")
     checkpoint_callback = ModelCheckpoint(
