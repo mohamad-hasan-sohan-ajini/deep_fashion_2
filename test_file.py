@@ -7,7 +7,7 @@ import torch
 from albumentations.pytorch import ToTensorV2
 from torchvision.utils import save_image
 
-from data.config import DataConfig, keypoint_indices
+from config import DataConfig, keypoint_indices
 from models.model_pl import TransformerModelPL
 
 parser = argparse.ArgumentParser()

@@ -5,7 +5,7 @@ from typing import Callable
 import torch
 from torch import Tensor, nn
 
-from models.config import ModelConfig
+from config import ModelConfig
 from models.object_queries import ObjectQueries
 from models.positional_encoding import PositionalEncoding2D
 

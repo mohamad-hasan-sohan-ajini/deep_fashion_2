@@ -8,7 +8,7 @@ from torch import Tensor, nn, ones, optim
 from torchmetrics import Accuracy
 from torchvision.ops import generalized_box_iou_loss
 
-from models.config import ModelConfig
+from config import ModelConfig
 from models.match import (
     Matcher,
     bbox_cost_function,
