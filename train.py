@@ -39,6 +39,11 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="Checkpoint from which to resume training",
     )
+    parser.add_argument(
+        "--fast-dev-run",
+        action="store_true",
+        help="Run one training and validation batch for debugging",
+    )
     return parser.parse_args()
 
 
@@ -78,7 +83,7 @@ def main() -> None:
         accumulate_grad_batches=args.accumulate_grad_batches,
         log_every_n_steps=args.log_every_n_steps,
         logger=logger,
-        fast_dev_run=True,  # Run one training and validation batch for debugging
+        fast_dev_run=args.fast_dev_run,
     )
     trainer.fit(
         model,
