@@ -1,7 +1,7 @@
 """Utilities"""
 
-import torch
 from torch import Tensor, nn
+from torchvision import models
 
 
 class ConvLayer(nn.Module):
@@ -19,12 +19,10 @@ class ConvLayer(nn.Module):
 
 
 def get_vgg_backbone(num_layers: int, d_model: int) -> nn.Module:
-    # valid num_layers: {11, 13, 16, 19}
-    vgg_model = torch.hub.load(
-        "pytorch/vision:v0.10.0",
-        f"vgg{num_layers}_bn",
-        pretrained=True,
-    )
+    if num_layers not in {11, 13, 16, 19}:
+        raise ValueError("VGG num_layers must be one of 11, 13, 16, or 19")
+
+    vgg_model = models.get_model(f"vgg{num_layers}_bn", weights="DEFAULT")
     num_maxpools = 0
     layers = []
     for layer in vgg_model.features:
@@ -39,12 +37,10 @@ def get_vgg_backbone(num_layers: int, d_model: int) -> nn.Module:
 
 
 def get_resnet_backbone(num_layers: int, d_model: int) -> nn.Module:
-    # valid num_layers: {18, 34, 50, 101, 152}
-    resnet_model = torch.hub.load(
-        "pytorch/vision:v0.10.0",
-        f"resnet{num_layers}",
-        pretrained=True,
-    )
+    if num_layers not in {18, 34, 50, 101, 152}:
+        raise ValueError("ResNet num_layers must be one of 18, 34, 50, 101, or 152")
+
+    resnet_model = models.get_model(f"resnet{num_layers}", weights="DEFAULT")
     in_channels = 128 if num_layers in [18, 34] else 512
     features = nn.Sequential(
         resnet_model.conv1,
