@@ -52,9 +52,17 @@ class TransformerModelPL(LightningModule):
         class_weights[0] = ModelConfig.class0_weight
         self.class_criterion = nn.CrossEntropyLoss(weight=class_weights)
         self.point_criterion = nn.SmoothL1Loss(reduction="mean")
+        self.register_buffer(
+            "tensorboard_images",
+            torch.empty(0),
+            persistent=False,
+        )
 
     def forward(self, images: Tensor) -> tuple[Tensor, Tensor]:
         return self.model(images)
+
+    def set_tensorboard_images(self, images: Tensor) -> None:
+        self.tensorboard_images = images.detach().clone()
 
     @staticmethod
     def _ordered_boxes(boxes: Tensor) -> Tensor:
@@ -132,6 +140,25 @@ class TransformerModelPL(LightningModule):
                 step,
             )
         experiment.flush()
+
+    def _log_fixed_predictions(self, step: int) -> None:
+        if not self.tensorboard_images.numel():
+            return
+
+        was_training = self.training
+        self.eval()
+        with torch.inference_mode():
+            pred_classes, pred_bboxes = self(self.tensorboard_images)
+        if was_training:
+            self.train()
+
+        self._log_predictions(
+            "training",
+            step,
+            self.tensorboard_images,
+            pred_classes,
+            pred_bboxes,
+        )
 
     def _log_batch_metrics(
         self,
@@ -264,13 +291,7 @@ class TransformerModelPL(LightningModule):
             and self.image_log_every_n_batches > 0
             and mini_batch_step % self.image_log_every_n_batches == 0
         ):
-            self._log_predictions(
-                "training",
-                mini_batch_step,
-                images,
-                pred_classes,
-                pred_bboxes,
-            )
+            self._log_fixed_predictions(mini_batch_step)
         return {"loss": loss}
 
     def validation_step(

@@ -4,6 +4,7 @@ import argparse
 from dataclasses import asdict
 from pathlib import Path
 
+import torch
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -81,12 +82,24 @@ def main() -> None:
         batch_size=args.batch_size,
         num_workers=args.num_workers,
     )
+    datamodule.setup(stage="fit")
+    num_tensorboard_images = min(
+        args.tensorboard_num_images,
+        len(datamodule.val_dataset),
+    )
+    fixed_val_images = torch.stack(
+        [
+            datamodule.val_dataset[index][0]
+            for index in range(num_tensorboard_images)
+        ]
+    )
     # check defaults in model_pl.py for default constructors and parameters
     model = TransformerModelPL(
         scalar_log_every_n_batches=args.scalar_log_every_n_batches,
         image_log_every_n_batches=args.image_log_every_n_batches,
         tensorboard_num_images=args.tensorboard_num_images,
     )
+    model.set_tensorboard_images(fixed_val_images)
     logger = TensorBoardLogger(
         save_dir=args.log_dir,
         name="",

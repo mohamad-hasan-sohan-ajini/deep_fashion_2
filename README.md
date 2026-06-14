@@ -96,7 +96,9 @@ python train.py \
 ```
 
 These intervals count mini-batches directly and are not multiplied by gradient
-accumulation. Epoch-averaged train and validation metrics are also retained.
+accumulation. Training prediction events reuse the same fixed validation
+images, making model changes directly comparable over time. Epoch-averaged
+train and validation metrics are also retained.
 
 ## Inference
 
