@@ -6,7 +6,7 @@ from typing import Callable
 import torch
 from torch import Tensor, nn
 
-from .object_queries import ObjectQueries
+from .object_query import ObjectQuery
 from .positional_encoding import PositionalEncoding2D
 
 
@@ -156,7 +156,7 @@ class TransformerModel(nn.Module):
             self.positional_encoder,
         )
         # object queries
-        self.object_queries = ObjectQueries(
+        self.object_queries = ObjectQuery(
             d_model,
             max_objects,
         )
@@ -206,7 +206,7 @@ if __name__ == "__main__":
         height=32,
         width=32,
         max_objects=10,
-        num_classes=3,
+        num_classes=14,
     )
 
     x = torch.randn(16, 3, 256, 256)
