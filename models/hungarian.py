@@ -9,7 +9,7 @@ from torch import nn
 class HungarianMatcher(nn.Module):
     """Match predicted boxes to target boxes with a weighted Hungarian cost."""
 
-    def __init__(self, class_weight: float = 1.0, bbox_weight: float = 1.0) -> None:
+    def __init__(self, class_weight: float, bbox_weight: float) -> None:
         super().__init__()
         self.class_weight = class_weight
         self.bbox_weight = bbox_weight
