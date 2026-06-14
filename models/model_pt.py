@@ -191,6 +191,7 @@ class TransformerModel(nn.Module):
         # run heads
         predicted_classes = self.class_ffn(target)
         predicted_bboxes = self.bbox_ffn(target)
+        # TODO: add keypoints head
         return predicted_classes, predicted_bboxes
 
 
