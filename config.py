@@ -54,7 +54,7 @@ class ModelConfig:
     num_classes: int = len(keypoint_indices) + 1  # 0: no object, 1-13: object classes
     num_keypoints: int = DataConfig.NUM_KEYPOINTS
     # matcher parameters
-    bbox_matching_weight: float = 5.0
+    bbox_matching_weight: float = 1.0
     class_matching_weight: float = 1.0
     keypoint_matching_weight: float = 0.0
     # loss function parameters
