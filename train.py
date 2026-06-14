@@ -26,6 +26,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-epochs", type=int, default=1000)
     parser.add_argument("--accumulate-grad-batches", type=int, default=8)
     parser.add_argument("--log-every-n-steps", type=int, default=100)
+    parser.add_argument(
+        "--scalar-log-every-n-batches",
+        type=int,
+        default=100,
+        help="Write batch-level loss metrics every N mini-batches; 0 disables",
+    )
+    parser.add_argument(
+        "--image-log-every-n-batches",
+        type=int,
+        default=1000,
+        help="Write training prediction images every N mini-batches; 0 disables",
+    )
+    parser.add_argument(
+        "--tensorboard-num-images",
+        type=int,
+        default=ModelConfig.tensorboard_num_images,
+        help="Number of images to render at each image logging event",
+    )
     parser.add_argument("--accelerator", default="auto")
     parser.add_argument("--devices", default="auto")
     parser.add_argument("--precision", default="32-true")
@@ -64,7 +82,11 @@ def main() -> None:
         num_workers=args.num_workers,
     )
     # check defaults in model_pl.py for default constructors and parameters
-    model = TransformerModelPL()
+    model = TransformerModelPL(
+        scalar_log_every_n_batches=args.scalar_log_every_n_batches,
+        image_log_every_n_batches=args.image_log_every_n_batches,
+        tensorboard_num_images=args.tensorboard_num_images,
+    )
     logger = TensorBoardLogger(
         save_dir=args.log_dir,
         name="",

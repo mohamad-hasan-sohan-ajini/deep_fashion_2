@@ -25,8 +25,14 @@ class TransformerModelPL(LightningModule):
         backbone_builder: Callable = get_resnet_backbone,
         feature_num_layers: int = 18,
         positional_encoding_builder: PositionalEncoding2D = FixedPositionalEncoding2D,
+        scalar_log_every_n_batches: int = 100,
+        image_log_every_n_batches: int = 800,
+        tensorboard_num_images: int = ModelConfig.tensorboard_num_images,
     ) -> None:
         super().__init__()
+        self.scalar_log_every_n_batches = scalar_log_every_n_batches
+        self.image_log_every_n_batches = image_log_every_n_batches
+        self.tensorboard_num_images = tensorboard_num_images
         self.model = TransformerModel(
             backbone_builder,
             feature_num_layers,
@@ -46,6 +52,7 @@ class TransformerModelPL(LightningModule):
         class_weights[0] = ModelConfig.class0_weight
         self.class_criterion = nn.CrossEntropyLoss(weight=class_weights)
         self.point_criterion = nn.SmoothL1Loss(reduction="mean")
+
     def forward(self, images: Tensor) -> tuple[Tensor, Tensor]:
         return self.model(images)
 
@@ -55,8 +62,10 @@ class TransformerModelPL(LightningModule):
         xy_max = torch.maximum(boxes[..., :2], boxes[..., 2:])
         return torch.cat((xy_min, xy_max), dim=-1)
 
-    def _log_validation_predictions(
+    def _log_predictions(
         self,
+        tag_prefix: str,
+        step: int,
         images: Tensor,
         pred_classes: Tensor,
         pred_bboxes: Tensor,
@@ -70,7 +79,7 @@ class TransformerModelPL(LightningModule):
         pred_bboxes = pred_bboxes.detach().cpu()
         mean = images.new_tensor((0.485, 0.456, 0.406)).view(3, 1, 1)
         std = images.new_tensor((0.229, 0.224, 0.225)).view(3, 1, 1)
-        num_images = min(ModelConfig.tensorboard_num_images, images.size(0))
+        num_images = min(self.tensorboard_num_images, images.size(0))
 
         for image_index in range(num_images):
             image = ((images[image_index] * std + mean).clamp(0, 1) * 255).to(
@@ -118,10 +127,38 @@ class TransformerModelPL(LightningModule):
             else:
                 rendered_image = image
             experiment.add_image(
-                f"validation/predictions/{image_index}",
+                f"{tag_prefix}/predictions/{image_index}",
                 rendered_image,
-                self.current_epoch + 1,
+                step,
             )
+        experiment.flush()
+
+    def _log_batch_metrics(
+        self,
+        step: int,
+        loss: Tensor,
+        class_loss: Tensor,
+        bbox_loss: Tensor,
+        class_accuracy: Tensor,
+    ) -> None:
+        experiment = getattr(self.logger, "experiment", None)
+        if experiment is None or not hasattr(experiment, "add_scalar"):
+            return
+
+        experiment.add_scalar("batch/loss", loss.detach(), step)
+        experiment.add_scalar("batch/class_loss", class_loss.detach(), step)
+        experiment.add_scalar("batch/bbox_loss", bbox_loss.detach(), step)
+        experiment.add_scalar(
+            "batch/class_accuracy",
+            class_accuracy.detach(),
+            step,
+        )
+        experiment.add_scalar(
+            "batch/learning_rate",
+            self.optimizers().param_groups[0]["lr"],
+            step,
+        )
+        experiment.flush()
 
     def configure_optimizers(self) -> dict[str, optim.Optimizer]:
         optimizer = optim.Adam(
@@ -204,6 +241,36 @@ class TransformerModelPL(LightningModule):
             self.optimizers().param_groups[0]["lr"],
             **log_options,
         )
+
+        mini_batch_step = (
+            self.current_epoch * int(self.trainer.num_training_batches)
+            + batch_index
+            + 1
+        )
+        if (
+            self.trainer.is_global_zero
+            and self.scalar_log_every_n_batches > 0
+            and mini_batch_step % self.scalar_log_every_n_batches == 0
+        ):
+            self._log_batch_metrics(
+                mini_batch_step,
+                loss,
+                class_loss,
+                giou_bbox_loss,
+                class_accuracy,
+            )
+        if (
+            self.trainer.is_global_zero
+            and self.image_log_every_n_batches > 0
+            and mini_batch_step % self.image_log_every_n_batches == 0
+        ):
+            self._log_predictions(
+                "training",
+                mini_batch_step,
+                images,
+                pred_classes,
+                pred_bboxes,
+            )
         return {"loss": loss}
 
     def validation_step(
@@ -282,7 +349,9 @@ class TransformerModelPL(LightningModule):
         self.log("bbox_l1/val", bbox_l1, **log_options)
 
         if batch_index == 0 and not self.trainer.sanity_checking:
-            self._log_validation_predictions(
+            self._log_predictions(
+                "validation",
+                self.current_epoch + 1,
                 images,
                 pred_classes,
                 pred_bboxes,

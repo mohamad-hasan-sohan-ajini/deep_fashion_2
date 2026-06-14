@@ -86,6 +86,18 @@ To inspect the logs:
 tensorboard --logdir runs
 ```
 
+For finer training curves and more frequent prediction images:
+
+```bash
+python train.py \
+    --scalar-log-every-n-batches 25 \
+    --image-log-every-n-batches 200 \
+    --tensorboard-num-images 4
+```
+
+These intervals count mini-batches directly and are not multiplied by gradient
+accumulation. Epoch-averaged train and validation metrics are also retained.
+
 ## Inference
 
 Run inference for one image using a Lightning checkpoint:
