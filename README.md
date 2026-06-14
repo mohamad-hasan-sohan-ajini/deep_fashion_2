@@ -114,6 +114,12 @@ python test_file.py \
 For CUDA, use `--device cuda --device-index 0`. The rendered image is written
 to `/tmp` using the input filename.
 
+### Sample Output
+
+Example prediction from a trained model:
+
+![DeepFashion2 model prediction](output/output.png)
+
 ## Module Checks
 
 The modules contain small executable checks. Run them from the repository root
