@@ -37,7 +37,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--ckpt-path",
         type=Path,
-        default=Path("checkpoints"),
         help="Checkpoint from which to resume training",
     )
     return parser.parse_args()
