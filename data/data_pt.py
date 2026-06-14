@@ -34,8 +34,8 @@ train_transforms = A.Compose(
         # spatial
         A.HorizontalFlip(),
         A.VerticalFlip(),
-        A.Affine(mode=cv2.BORDER_REPLICATE),
-        A.Perspective(pad_mode=cv2.BORDER_REPLICATE),
+        A.Affine(border_mode=cv2.BORDER_REPLICATE),
+        A.Perspective(border_mode=cv2.BORDER_REPLICATE),
         A.Rotate(limit=30, border_mode=cv2.BORDER_REPLICATE),
         A.SmallestMaxSize(max_size=320),
         A.RandomScale(scale_limit=0.1),
