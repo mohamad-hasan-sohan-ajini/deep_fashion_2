@@ -77,12 +77,13 @@ python train.py
 ```
 
 Training uses PyTorch Lightning. TensorBoard logs and checkpoints are written
-under `lightning_logs/` by default.
+under `runs/` by default. Scalars and validation prediction images are logged
+after each epoch.
 
 To inspect the logs:
 
 ```bash
-tensorboard --logdir lightning_logs
+tensorboard --logdir runs
 ```
 
 ## Inference
