@@ -18,6 +18,23 @@ keypoint_indices = {
     13: (275, 294),
 }
 
+class_names = [
+    "background",
+    "short sleeve top",
+    "long sleeve top",
+    "short sleeve outwear",
+    "long sleeve outwear",
+    "vest",
+    "sling",
+    "shorts",
+    "trousers",
+    "skirt",
+    "short sleeve dress",
+    "long sleeve dress",
+    "vest dress",
+    "sling dress",
+]
+
 
 @dataclass
 class DataConfig:
@@ -48,3 +65,6 @@ class ModelConfig:
     # optimizer and scheduler parameters
     feature_lr: float = 1e-4
     transformer_lr: float = 1e-5
+    prediction_score_threshold: float = 0.25
+    tensorboard_num_images: int = 4
+    tensorboard_max_predictions: int = 10
