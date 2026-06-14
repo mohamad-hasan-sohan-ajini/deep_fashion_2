@@ -89,10 +89,10 @@ class TransformerModelPL(LightningModule):
 
     def training_step(
         self,
-        batch: tuple[Tensor, Tensor, Tensor, Tensor, Tensor],
+        batch: tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor],
         batch_index: int,
     ) -> dict[str, Tensor]:
-        images, gt_classes, gt_bboxes, gt_keypoints, gt_visibilities = batch
+        images, gt_classes, gt_bboxes, gt_keypoints, gt_visibilities, _ = batch
         pred_classes, pred_bboxes, pred_keypoints = self(images)
         # find best matchings
         target_indices = self.matcher(
@@ -142,10 +142,10 @@ class TransformerModelPL(LightningModule):
 
     def validation_step(
         self,
-        batch: tuple[Tensor, Tensor, Tensor, Tensor, Tensor],
+        batch: tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor],
         batch_index: int,
     ) -> dict[str, Tensor]:
-        images, gt_classes, gt_bboxes, gt_keypoints, gt_visibilities = batch
+        images, gt_classes, gt_bboxes, gt_keypoints, gt_visibilities, _ = batch
         pred_classes, pred_bboxes, pred_keypoints = self(images)
         # find best matchings
         target_indices = self.matcher(
@@ -218,6 +218,7 @@ if __name__ == "__main__":
         batch_dict["bboxes"],
         batch_dict["keypoints"],
         batch_dict["visibilities"],
+        batch_dict["classes"] != 0,
     )
     pl_model = TransformerModelPL()
     pl_model.training_step(batch, 0)
