@@ -51,8 +51,8 @@ def main() -> None:
     seed_everything(args.seed, workers=True)
 
     datamodule = DeepFashion2DataModule(
-        str(train_path),
-        str(val_path),
+        train_path,
+        val_path,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
     )
