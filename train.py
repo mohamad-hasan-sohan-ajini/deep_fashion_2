@@ -25,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--accumulate-grad-batches", type=int, default=8)
     parser.add_argument("--log-every-n-steps", type=int, default=1000)
     parser.add_argument("--accelerator", default="auto")
-    parser.add_argument("--devices", default="cuda:0")
+    parser.add_argument("--devices", default="auto")
     parser.add_argument("--precision", default="32-true")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
