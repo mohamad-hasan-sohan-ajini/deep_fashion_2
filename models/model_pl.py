@@ -3,12 +3,13 @@
 from itertools import chain
 from typing import Callable
 
+import torch
 from pytorch_lightning import LightningModule
 from torch import Tensor, nn, ones, optim
-from torchmetrics import Accuracy
 from torchvision.ops import generalized_box_iou_loss
+from torchvision.utils import draw_bounding_boxes
 
-from config import ModelConfig
+from config import ModelConfig, class_names
 from models.hungarian import HungarianMatcher
 from models.model_pt import TransformerModel
 from models.positional_encoding import (
@@ -45,13 +46,82 @@ class TransformerModelPL(LightningModule):
         class_weights[0] = ModelConfig.class0_weight
         self.class_criterion = nn.CrossEntropyLoss(weight=class_weights)
         self.point_criterion = nn.SmoothL1Loss(reduction="mean")
-        self.accuracy = Accuracy(
-            task="multiclass",
-            num_classes=ModelConfig.num_classes,
-        )
-
     def forward(self, images: Tensor) -> tuple[Tensor, Tensor]:
         return self.model(images)
+
+    @staticmethod
+    def _ordered_boxes(boxes: Tensor) -> Tensor:
+        xy_min = torch.minimum(boxes[..., :2], boxes[..., 2:])
+        xy_max = torch.maximum(boxes[..., :2], boxes[..., 2:])
+        return torch.cat((xy_min, xy_max), dim=-1)
+
+    def _log_validation_predictions(
+        self,
+        images: Tensor,
+        pred_classes: Tensor,
+        pred_bboxes: Tensor,
+    ) -> None:
+        experiment = getattr(self.logger, "experiment", None)
+        if experiment is None or not hasattr(experiment, "add_image"):
+            return
+
+        images = images.detach().cpu()
+        pred_classes = pred_classes.detach().cpu()
+        pred_bboxes = pred_bboxes.detach().cpu()
+        mean = images.new_tensor((0.485, 0.456, 0.406)).view(3, 1, 1)
+        std = images.new_tensor((0.229, 0.224, 0.225)).view(3, 1, 1)
+        num_images = min(ModelConfig.tensorboard_num_images, images.size(0))
+
+        for image_index in range(num_images):
+            image = ((images[image_index] * std + mean).clamp(0, 1) * 255).to(
+                torch.uint8
+            )
+            probabilities = pred_classes[image_index].softmax(dim=-1)
+            scores, labels = probabilities.max(dim=-1)
+            keep = (labels != 0) & (
+                scores >= ModelConfig.prediction_score_threshold
+            )
+            scores = scores[keep]
+            labels = labels[keep]
+            boxes = pred_bboxes[image_index][keep]
+
+            if scores.numel():
+                num_predictions = min(
+                    ModelConfig.tensorboard_max_predictions,
+                    scores.numel(),
+                )
+                scores, indices = scores.topk(num_predictions)
+                labels = labels[indices]
+                boxes = self._ordered_boxes(boxes[indices].clamp(0, 1))
+                height, width = image.shape[-2:]
+                scale = boxes.new_tensor((width, height, width, height))
+                boxes = boxes * scale
+                valid = (boxes[:, 2] > boxes[:, 0]) & (
+                    boxes[:, 3] > boxes[:, 1]
+                )
+                boxes = boxes[valid]
+                scores = scores[valid]
+                labels = labels[valid]
+
+            if boxes.numel():
+                box_labels = [
+                    f"{class_names[int(label)]} {float(score):.2f}"
+                    for label, score in zip(labels, scores)
+                ]
+                rendered_image = draw_bounding_boxes(
+                    image,
+                    boxes,
+                    labels=box_labels,
+                    colors="red",
+                    width=2,
+                )
+            else:
+                rendered_image = image
+            experiment.add_image(
+                f"validation/predictions/{image_index}",
+                rendered_image,
+                self.current_epoch + 1,
+            )
 
     def configure_optimizers(self) -> dict[str, optim.Optimizer]:
         optimizer = optim.Adam(
@@ -98,8 +168,10 @@ class TransformerModelPL(LightningModule):
             pred_bboxes,
             target,
         )
-        matched_pred_bboxes = pred_bboxes[pred_bbox_indices]
-        matched_gt_bboxes = gt_bboxes[target_bbox_indices]
+        matched_pred_bboxes = self._ordered_boxes(
+            pred_bboxes[pred_bbox_indices]
+        )
+        matched_gt_bboxes = self._ordered_boxes(gt_bboxes[target_bbox_indices])
 
         class_loss = self.class_criterion(
             pred_classes.flatten(0, 1),
@@ -114,7 +186,24 @@ class TransformerModelPL(LightningModule):
             class_loss * ModelConfig.ce_class_loss_weight
             + giou_bbox_loss * ModelConfig.giou_bbox_loss_weight
         )
-        self.log("loss", loss)
+        predicted_classes = pred_classes.argmax(dim=-1)
+        class_accuracy = (
+            predicted_classes == target_classes
+        ).float().mean()
+        log_options = {
+            "on_step": False,
+            "on_epoch": True,
+            "batch_size": images.size(0),
+        }
+        self.log("loss/train", loss, prog_bar=True, **log_options)
+        self.log("class_loss/train", class_loss, **log_options)
+        self.log("bbox_loss/train", giou_bbox_loss, **log_options)
+        self.log("class_accuracy/train", class_accuracy, **log_options)
+        self.log(
+            "learning_rate",
+            self.optimizers().param_groups[0]["lr"],
+            **log_options,
+        )
         return {"loss": loss}
 
     def validation_step(
@@ -134,12 +223,20 @@ class TransformerModelPL(LightningModule):
             pred_bboxes,
             target,
         )
-        matched_pred_bboxes = pred_bboxes[pred_bbox_indices]
-        matched_gt_bboxes = gt_bboxes[target_bbox_indices]
+        matched_pred_bboxes = self._ordered_boxes(
+            pred_bboxes[pred_bbox_indices]
+        )
+        matched_gt_bboxes = self._ordered_boxes(gt_bboxes[target_bbox_indices])
         predicted_classes = pred_classes.argmax(dim=-1)
         object_indices = target_classes > 0
 
-        class_accuracy_w0 = self.accuracy(predicted_classes, target_classes)
+        class_loss = self.class_criterion(
+            pred_classes.flatten(0, 1),
+            target_classes.flatten(),
+        )
+        class_accuracy_w0 = (
+            predicted_classes == target_classes
+        ).float().mean()
         if object_indices.any():
             class_accuracy_wo0 = (
                 (predicted_classes[object_indices] == target_classes[object_indices])
@@ -159,15 +256,43 @@ class TransformerModelPL(LightningModule):
             class_accuracy_wo0 = pred_classes.new_zeros(())
             bbox_giou = pred_bboxes.new_zeros(())
             bbox_l1 = pred_bboxes.new_zeros(())
-        self.log("class_accuracy_w0", class_accuracy_w0)
-        self.log("class_accuracy_wo0", class_accuracy_wo0)
-        self.log("bbox_giou", bbox_giou)
-        self.log("bbox_l1", bbox_l1)
+        loss = (
+            class_loss * ModelConfig.ce_class_loss_weight
+            + bbox_giou * ModelConfig.giou_bbox_loss_weight
+        )
+        log_options = {
+            "on_step": False,
+            "on_epoch": True,
+            "batch_size": images.size(0),
+        }
+        self.log("loss/val", loss, prog_bar=True, **log_options)
+        self.log("class_loss/val", class_loss, **log_options)
+        self.log("bbox_loss/val", bbox_giou, **log_options)
+        self.log(
+            "class_accuracy/val",
+            class_accuracy_w0,
+            prog_bar=True,
+            **log_options,
+        )
+        self.log(
+            "class_accuracy_without_background/val",
+            class_accuracy_wo0,
+            **log_options,
+        )
+        self.log("bbox_l1/val", bbox_l1, **log_options)
+
+        if batch_index == 0 and not self.trainer.sanity_checking:
+            self._log_validation_predictions(
+                images,
+                pred_classes,
+                pred_bboxes,
+            )
+
         result_dict = {
-            "class_accuracy_w0": class_accuracy_w0,
-            "class_accuracy_wo0": class_accuracy_wo0,
-            "bbox_giou": bbox_giou,
-            "bbox_l1": bbox_l1,
+            "loss": loss,
+            "class_loss": class_loss,
+            "bbox_loss": bbox_giou,
+            "class_accuracy": class_accuracy_w0,
         }
         return result_dict
 
