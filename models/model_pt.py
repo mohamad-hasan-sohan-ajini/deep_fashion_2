@@ -1,13 +1,13 @@
 """Transformer model implementation"""
 
+from pathlib import Path
 from typing import Callable
 
 import torch
 from torch import Tensor, nn
 
-from config import ModelConfig
-from models.object_queries import ObjectQueries
-from models.positional_encoding import PositionalEncoding2D
+from .object_queries import ObjectQueries
+from .positional_encoding import PositionalEncoding2D
 
 
 class TransformerEncoderLayer(nn.Module):
@@ -31,9 +31,9 @@ class TransformerEncoderLayer(nn.Module):
         self.ff = nn.Sequential(
             nn.Linear(d_model, 4 * d_model),
             nn.Dropout(dropout),
-            nn.LeakyReLU(inplace=True),
+            nn.LeakyReLU(),
             nn.Linear(4 * d_model, d_model),
-            nn.Dropout(inplace=True),
+            nn.Dropout(dropout),
         )
         self.ln2 = nn.LayerNorm(d_model)
 
@@ -74,9 +74,9 @@ class TransformerDecoderLayer(nn.Module):
         self.ff = nn.Sequential(
             nn.Linear(d_model, 4 * d_model),
             nn.Dropout(dropout),
-            nn.LeakyReLU(inplace=True),
+            nn.LeakyReLU(),
             nn.Linear(4 * d_model, d_model),
-            nn.Dropout(inplace=True),
+            nn.Dropout(dropout),
         )
         self.ln3 = nn.LayerNorm(d_model)
 
@@ -98,81 +98,81 @@ class TransformerModel(nn.Module):
         backbone_builder: Callable,
         feature_num_layers: int,
         positional_encoding_builder: PositionalEncoding2D,
+        d_model: int,
+        height: int,
+        width: int,
+        max_objects: int,
+        num_classes: int,
+        dropout: float = 0.15,
     ) -> None:
         super().__init__()
         # Feature extraction
         self.feature_extractor = backbone_builder(
             feature_num_layers,
-            ModelConfig.d_model,
+            d_model,
         )
         # Memory positional encoder
         self.positional_encoder = positional_encoding_builder(
-            ModelConfig.d_model,
-            ModelConfig.height,
-            ModelConfig.width,
+            d_model,
+            height,
+            width,
         )
         # Transformer encoder
         self.encoder1 = TransformerEncoderLayer(
-            ModelConfig.d_model,
-            ModelConfig.dropout,
+            d_model,
+            dropout,
             True,
             self.positional_encoder,
         )
         self.encoder2 = TransformerEncoderLayer(
-            ModelConfig.d_model,
-            ModelConfig.dropout,
+            d_model,
+            dropout,
             True,
             self.positional_encoder,
         )
         self.encoder3 = TransformerEncoderLayer(
-            ModelConfig.d_model,
-            ModelConfig.dropout,
+            d_model,
+            dropout,
             True,
             self.positional_encoder,
         )
         # Transformer decoder
         self.decoder1 = TransformerDecoderLayer(
-            ModelConfig.d_model,
-            ModelConfig.dropout,
+            d_model,
+            dropout,
             True,
             self.positional_encoder,
         )
         self.decoder2 = TransformerDecoderLayer(
-            ModelConfig.d_model,
-            ModelConfig.dropout,
+            d_model,
+            dropout,
             True,
             self.positional_encoder,
         )
         self.decoder3 = TransformerDecoderLayer(
-            ModelConfig.d_model,
-            ModelConfig.dropout,
+            d_model,
+            dropout,
             True,
             self.positional_encoder,
         )
         # object queries
         self.object_queries = ObjectQueries(
-            ModelConfig.d_model,
-            ModelConfig.max_objects,
+            d_model,
+            max_objects,
         )
         self.class_ffn = nn.Sequential(
-            nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
-            nn.LeakyReLU(inplace=True),
-            nn.Linear(ModelConfig.d_model, ModelConfig.num_classes),
+            nn.Linear(d_model, d_model),
+            nn.LeakyReLU(),
+            nn.Linear(d_model, num_classes),
         )
         self.bbox_ffn = nn.Sequential(
-            nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
-            nn.LeakyReLU(inplace=True),
-            nn.Linear(ModelConfig.d_model, 4),
-            nn.Sigmoid(),
-        )
-        self.keypoints_ffn = nn.Sequential(
-            nn.Linear(ModelConfig.d_model, ModelConfig.d_model),
-            nn.LeakyReLU(inplace=True),
-            nn.Linear(ModelConfig.d_model, 2 * ModelConfig.num_keypoints),
+            nn.Linear(d_model, d_model),
+            nn.LeakyReLU(),
+            nn.Linear(d_model, 4),
             nn.Sigmoid(),
         )
 
-    def forward(self, images: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+    def forward(self, images: Tensor) -> tuple[Tensor, Tensor]:
         # extract features
         memory = self.feature_extractor(images)
         # amend data shape
@@ -183,7 +183,7 @@ class TransformerModel(nn.Module):
         memory = self.encoder2(memory)
         memory = self.encoder3(memory)
         # get targets
-        target = self.object_queries().repeat(batch_size, 1, 1)
+        target = self.object_queries().unsqueeze(0).expand(batch_size, -1, -1)
         # transformer decoder
         target = self.decoder1(target, memory)
         target = self.decoder2(target, memory)
@@ -191,34 +191,26 @@ class TransformerModel(nn.Module):
         # run heads
         predicted_classes = self.class_ffn(target)
         predicted_bboxes = self.bbox_ffn(target)
-        predicted_keypoints = self.keypoints_ffn(target)
-        predicted_keypoints = predicted_keypoints.view(
-            batch_size,
-            -1,
-            ModelConfig.num_keypoints,
-            2,
-        )
-        return predicted_classes, predicted_bboxes, predicted_keypoints
+        return predicted_classes, predicted_bboxes
 
 
 if __name__ == "__main__":
-    import torch
-    from models.positional_encoding import (
-        FixedPositionalEncoding2D,
-        LearnablePositionalEncoding2D,
-    )
-    from models.utils import get_vgg_backbone, get_resnet_backbone
-    from models.model_pt import TransformerModel
+    from .positional_encoding import FixedPositionalEncoding2D
+    from .utils import get_resnet_backbone
 
     model = TransformerModel(
         get_resnet_backbone,
         18,
         FixedPositionalEncoding2D,
+        d_model=128,
+        height=32,
+        width=32,
+        max_objects=10,
+        num_classes=3,
     )
 
     x = torch.randn(16, 3, 256, 256)
     print(f"{x.size() = }")
-    predicted_classes, predicted_bboxes, predicted_keypoints = model(x)
+    predicted_classes, predicted_bboxes = model(x)
     print(f"{predicted_classes.shape = }")
     print(f"{predicted_bboxes.shape = }")
-    print(f"{predicted_keypoints.shape = }")
