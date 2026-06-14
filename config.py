@@ -61,10 +61,10 @@ class ModelConfig:
     ce_class_loss_weight: float = 1
     giou_bbox_loss_weight: float = 1
     mse_keypoints_loss_weight: float = 1
-    class0_weight: float = 1e-1
+    class0_weight: float = 0.25
     # optimizer and scheduler parameters
     feature_lr: float = 1e-4
     transformer_lr: float = 1e-5
-    prediction_score_threshold: float = 0.25
+    prediction_score_threshold: float = 0.5
     tensorboard_num_images: int = 4
     tensorboard_max_predictions: int = 10
